@@ -1,16 +1,16 @@
 # Amith Raul | AI and Platform Engineering Portfolio
 
-This repository contains practical examples of enterprise AI and platform patterns. Each project is designed so you can run it locally, inspect the code, and understand the design decisions.
+This repository contains practical, small-scale examples of enterprise AI and platform patterns. Each project is built so a reviewer can run it, inspect the design, and understand the tradeoffs.
 
 ## Projects
 
 ### Governed Agentic BI Demo
 
-A local analytics demo that routes a small set of questions to approved metrics, applies role scopes on the server, and records decisions in an audit log. It uses synthetic data and a deterministic router so the governance path is easy to understand before adding an AI model.
+An interactive local demo that maps a small set of analytics questions to approved metrics, applies role-based data scopes on the server, and records decisions in an audit log. It uses invented data and a deterministic router so the governance path is visible before any model is added.
 
-- [Project guide](projects/governed-agentic-bi-demo/README.md)
+- [Project README and run instructions](projects/governed-agentic-bi-demo/README.md)
 - [Application code](projects/governed-agentic-bi-demo/app.py)
 
-## How to explore
+## How to use this portfolio
 
-Start with the project guide, run the app locally, and trace a request from the browser through intent classification, role policy, query, and audit record. These are learning prototypes, not production security products.
+Start with the project README, run the example locally, then inspect the code path from request to policy check to query and audit record. The projects are learning artifacts and reference patterns, not production security products.

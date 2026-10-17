@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Governed Agentic BI Demo</title>
+  <style>
+    :root { color-scheme: light; --ink:#17212b; --muted:#536273; --blue:#2457a7; --line:#d9e0e8; --panel:#fff; --bg:#f3f6fa; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,Segoe UI,sans-serif; }
+    main { max-width:900px; margin:48px auto; padding:0 20px; }
+    header { margin-bottom:24px; }
+    h1 { margin:0 0 8px; font-size:clamp(28px,5vw,42px); letter-spacing:-.03em; }
+    .sub { color:var(--muted); max-width:720px; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:22px; margin:16px 0; box-shadow:0 6px 20px #1c34500a; }
+    label { display:block; font-weight:650; margin:0 0 6px; }
+    select,input { width:100%; padding:11px 12px; border:1px solid #aeb9c6; border-radius:8px; background:#fff; color:var(--ink); font:inherit; }
+    .grid { display:grid; grid-template-columns:1fr 2fr; gap:16px; }
+    button { padding:11px 16px; border:0; border-radius:8px; color:white; background:var(--blue); font:inherit; font-weight:650; cursor:pointer; }
+    button:hover { background:#193f7d; }
+    .examples { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 0; }
+    .examples button { color:var(--blue); background:#edf3ff; font-size:14px; }
+    pre { white-space:pre-wrap; overflow-wrap:anywhere; margin:0; color:#203044; }
+    .warning { border-left:4px solid #d28b18; background:#fff8e8; padding:12px 14px; border-radius:4px; color:#553b12; }
+    .small { font-size:14px; color:var(--muted); }
+    @media (max-width:620px) { .grid { grid-template-columns:1fr; } main { margin:28px auto; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Governed Agentic BI</h1>
+    <div class="sub">A small, runnable reference demo for routing analytics requests through an allowlisted tool with server-side role scopes and an audit trail.</div>
+  </header>
+  <section class="card">
+    <div class="grid">
+      <div><label for="role">Demo role</label><select id="role"><option value="analyst">Analyst · all-region detail</option><option value="regional_manager">Regional manager · West only</option><option value="executive_viewer">Executive viewer · totals only</option></select></div>
+      <div><label for="question">Ask about the synthetic data</label><input id="question" maxlength="240" value="Show revenue by region" autocomplete="off"></div>
+    </div>
+    <div class="examples">
+      <button data-q="Show revenue by region">Revenue by region</button>
+      <button data-q="What is total revenue?">Total revenue</button>
+      <button data-q="Show headcount by region">Headcount by region</button>
+      <button data-q="Show customer names">Try a non-approved request</button>
+    </div>
+    <p><button id="ask">Run approved analytics request</button></p>
+    <p class="small">Role selection is a demo control, not identity verification. The app enforces the selected policy on the server to demonstrate the pattern.</p>
+  </section>
+  <section class="card"><h2>Result</h2><pre id="result">Choose a request to see the response.</pre></section>
+  <p class="warning"><strong>Prototype boundary:</strong> This demo uses invented data and deterministic intent routing. It does not call an LLM, authenticate users, or represent a production security control.</p>
+</main>
+<script>
+  const result = document.querySelector('#result');
+  async function ask() {
+    const q = document.querySelector('#question').value;
+    const role = document.querySelector('#role').value;
+    result.textContent = 'Working…';
+    try {
+      const response = await fetch(`/api/ask?q=${encodeURIComponent(q)}&role=${encodeURIComponent(role)}`);
+      const data = await response.json();
+      result.textContent = JSON.stringify({http_status: response.status, ...data}, null, 2);
+    } catch (error) { result.textContent = `Request failed: ${error}`; }
+  }
+  document.querySelector('#ask').addEventListener('click', ask);
+  document.querySelectorAll('[data-q]').forEach(button => button.addEventListener('click', () => {
+    document.querySelector('#question').value = button.dataset.q; ask();
+  }));
+  document.querySelector('#question').addEventListener('keydown', event => { if (event.key === 'Enter') ask(); });
+</script>
+</body>
+</html>

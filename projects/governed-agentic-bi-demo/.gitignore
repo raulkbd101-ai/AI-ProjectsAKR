@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+demo.sqlite3
+audit.jsonl
+.venv/
+.env

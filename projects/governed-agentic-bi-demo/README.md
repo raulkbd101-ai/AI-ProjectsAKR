@@ -2,7 +2,25 @@
 
 This project shows a small, inspectable version of a pattern used in enterprise analytics: receive a request, map it to an approved operation, check what the caller may see, run a constrained query, and record the decision.
 
-It uses synthetic data and deterministic intent routing. There is no LLM call yet. That is deliberate: first learn where authorization belongs and how to make decisions visible. A model can help interpret language later, but it should not be allowed to grant itself data access.
+It uses synthetic data and deterministic intent routing. It makes **no LLM calls**. That is deliberate: governance can be designed and demonstrated before adding a model. A model may later help interpret language, but it should never decide its own data access.
+
+## What this demonstrates for governance
+
+This is a local governance learning project, not a production governance service. It makes several controls concrete and easy to inspect:
+
+- A short allowlist limits which analytics operations can run.
+- A server-side policy scopes results by role, even though the role picker itself is only a demo control.
+- Unsupported questions and out-of-scope requests are denied.
+- Each decision gets a request ID and a JSON Lines audit record; the raw question is not recorded.
+- Fixed SQL and synthetic data keep the demo's data path understandable and safe to publish.
+
+These controls can be used to discuss policy design, test role boundaries, and show how an analytics request can be traced. They do not establish real identity, regulatory compliance, or production security. The project remains useful without an LLM; adding one is optional and should not weaken the backend policy checks.
+
+## Local demo evidence
+
+The screenshot below was captured from the app running at `127.0.0.1:8000`. It shows the interface loaded locally and an unsupported request receiving HTTP 422 with a request ID. This is evidence of a working local UI and rejection path, not a security certification.
+
+![Local demo showing an unsupported customer-name request rejected with HTTP 422](docs/images/local-demo-rejected-request.png)
 
 ## Run it on your laptop
 
@@ -55,14 +73,16 @@ The browser can choose the role, so a real user could change it. This makes it u
 
 ## Current boundaries
 
-This is a portfolio prototype. It does not call an LLM, authenticate users, implement enterprise-grade access controls, or provide a production audit system. Do not expose the local server to a network. Before production use, add trusted identity, a policy engine, tests for role boundaries, TLS, rate limits, secrets management, audit retention controls, monitoring, and a model/tool evaluation process.
+This is a portfolio prototype. It does not call an LLM, authenticate users, implement enterprise-grade access controls, or provide a production audit system. Do not expose the local server to a network. Before production use, add trusted identity, a policy engine, tests for role boundaries, TLS, rate limits, secrets management, audit retention controls, and monitoring. If a model is added later, evaluate its intent proposals and tool use separately; the backend must continue to enforce authorization.
 
-## Next learning steps
+## Next governance steps
 
-1. Add tests for every role and intent combination.
-2. Add a small evaluation set for supported, ambiguous, and denied questions.
-3. Add an MCP adapter that exposes only the same approved analytics operations.
-4. Add a model-based intent parser while keeping authorization in the backend.
+1. Add tests for every role and intent combination, including denied requests.
+2. Document a role-to-metric policy matrix and check that the API behavior matches it.
+3. Add audit review and retention guidance, then decide what a real deployment should record.
+4. Replace the demo role picker with trusted identity claims and a maintained policy source before any real use.
+
+An LLM is not required for these steps. If a model-based parser is explored later, keep its output limited to proposing an allowlisted intent; authorization must remain enforced by the backend.
 
 ## License
 

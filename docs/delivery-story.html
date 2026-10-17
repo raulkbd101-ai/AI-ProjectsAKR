@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="A reflection on turning enterprise delivery experience into AI-assisted, testable analytics and governance prototypes.">
+  <title>From Enterprise Delivery to Hands-On Prototypes | Amith Raul</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="shell nav"><a class="brand" href="./">Amith Raul</a><nav class="navlinks"><a href="index.html#work">Projects</a><a href="https://github.com/raulkbd101-ai">GitHub profile</a></nav></header>
+  <main class="shell section prose">
+    <a class="back" href="index.html">← Portfolio home</a>
+    <div class="eyebrow" style="margin-top:24px">A delivery and learning reflection</div>
+    <h1 style="font-size:clamp(36px,5.5vw,58px)">From enterprise delivery to hands-on prototypes</h1>
+    <p class="lead">I’m using a public project portfolio to connect my enterprise transformation perspective with practical experience building, running, and evaluating small AI and analytics systems.</p>
+    <div class="meta"><span class="chip">Self-directed portfolio</span><span class="chip">AI-assisted implementation</span><span class="chip">Synthetic scenarios</span></div>
+
+    <h2>Why I started</h2>
+    <p>In enterprise work, a promising idea still has to survive the details: who can use it, which data it can touch, how success is measured, what happens when a check fails, and who owns the next decision. I wanted to make those questions tangible through small projects that someone else can run and inspect.</p>
+    <p>The aim is to strengthen my hands-on understanding while using the judgment I have developed through enterprise delivery. The work is intentionally scoped as learning prototypes. It does not claim a client deployment, production security, or measured financial or operational benefit.</p>
+
+    <h2>How I approached the work</h2>
+    <div class="journey">
+      <article class="step"><span class="stepnum">1</span><div><h3>Choose a recognizable enterprise problem</h3><p>Start with a practical concern such as governed analytics, cloud cost visibility, AI run quality, or a legacy report migration.</p></div></article>
+      <article class="step"><span class="stepnum">2</span><div><h3>Keep the learning environment safe and understandable</h3><p>Use invented data and deterministic behavior. Avoid connecting to customer systems, cloud accounts, live models, or production identities.</p></div></article>
+      <article class="step"><span class="stepnum">3</span><div><h3>Make the decision path visible</h3><p>Show the inputs, rules, outcomes, blockers, and audit details in the interface or server output so a reviewer can follow what happened.</p></div></article>
+      <article class="step"><span class="stepnum">4</span><div><h3>Test the behavior and run the demo locally</h3><p>Use focused automated tests for core calculations and policy rules, then run the app and capture the actual interface and test output.</p></div></article>
+      <article class="step"><span class="stepnum">5</span><div><h3>Document the boundary</h3><p>State what is synthetic, what is modeled, and what would be needed before a production implementation could be trusted.</p></div></article>
+    </div>
+
+    <h2 id="bi-modernization">Case study: BI modernization planning</h2>
+    <p>The BI modernization case study brings the delivery themes together. It treats migration as a portfolio decision, not just a dashboard rewrite. The synthetic inventory makes report owners, data-quality scores, dependencies, candidate target models, and proposed waves visible. It also shows modeled legacy-versus-target cost and latency estimates.</p>
+    <p>The governance gates highlight the work that needs agreement before cutover: KPI definitions and semantic contracts, reconciliation tolerance, data freshness, access and lineage, support ownership, and rollback. The dashboard includes filters so the portfolio can be viewed by business domain and migration state.</p>
+    <p><strong>What it demonstrates:</strong> how to structure a transparent migration discussion and make readiness blockers visible. <strong>What it does not demonstrate:</strong> an actual migration, measured savings, real platform performance, or business-approved KPI parity. All figures and reports are fictional.</p>
+    <p><a href="https://github.com/raulkbd101-ai/AI-ProjectsAKR/tree/main/projects/bi-modernization-case-study">Review the BI Modernization project, tests, and local screenshots →</a></p>
+
+    <h2>What I learned across the portfolio</h2>
+    <ul>
+      <li>Governance is easier to discuss when the policy and its outcome are visible in a concrete workflow.</li>
+      <li>Metric definitions, owners, data quality, and lineage are part of modernization; moving a report alone does not resolve them.</li>
+      <li>A prototype should make failure and uncertainty legible, not only show a successful path.</li>
+      <li>Test output and screenshots help reviewers verify what ran, while still not proving production readiness.</li>
+      <li>It is important to separate modeled estimates from measured outcomes and aspirations from completed delivery.</li>
+    </ul>
+
+    <h2>What I would do next in a real program</h2>
+    <p>I would begin with stakeholder discovery and a baseline of actual report usage, operating cost, service levels, and data dependencies. I would agree on semantic definitions and reconciliation criteria with domain owners, prioritize a small pilot with clear rollback conditions, and measure the target system under representative access and workloads. I would then use the evidence to sequence the remaining migration and formalize ownership and support.</p>
+
+    <h2>My role and the use of AI assistance</h2>
+    <p>These are AI-assisted, self-directed builds. I use an AI coding assistant during implementation. I choose the portfolio problem and constraints, review the resulting behavior, run the examples and tests, capture evidence, and explain the tradeoffs. I present them as proof of initiative and applied learning—not as production deployments or as a substitute for the experience described in my resume.</p>
+
+    <div class="note"><strong>Portfolio boundary:</strong> the source code and screenshots are public learning artifacts. The demos use invented data and run locally. No employer or client information is included, and no business result should be inferred from the synthetic metrics.</div>
+    <p class="small" style="margin-top:26px">This page is a living reflection. I plan to update it as I learn, add better tests, and document new evidence.</p>
+  </main>
+  <footer class="shell footer">© 2026 Amith Raul · <a href="https://github.com/raulkbd101-ai/AI-ProjectsAKR">Source repository</a></footer>
+</body>
+</html>

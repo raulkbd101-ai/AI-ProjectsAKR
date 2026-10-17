@@ -2,6 +2,16 @@
 
 This repository contains practical, small-scale examples of enterprise AI and platform patterns. Each project is built so a reviewer can run it, inspect the design, and understand the tradeoffs.
 
+## Portfolio website
+
+- [Static portfolio home page source](docs/index.html)
+- [Delivery and learning story](docs/delivery-story.html)
+- [Shared website styles](docs/styles.css)
+
+The website can be served for free with GitHub Pages from this public repository's `main` branch and `/docs` folder. To enable it, open **Settings → Pages → Build and deployment**, choose **Deploy from a branch**, select `main` and `/docs`, then save. The expected address is `https://raulkbd101-ai.github.io/AI-ProjectsAKR/`. The Pages setting is not enabled yet.
+
+GitHub Pages serves static files; the Python-backed project demos remain runnable locally from their linked READMEs. [GitHub Pages is available for public repositories on GitHub Free](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site), and [does not support server-side Python](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site).
+
 ## Projects
 
 ### Governed Agentic BI Demo

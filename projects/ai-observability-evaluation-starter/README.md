@@ -38,7 +38,23 @@ python -m unittest discover -s tests -v
 
 The tests exercise the weighted score, quality and safety gates, summaries, latency percentile, release comparison, filters, validation, and trace duration accounting. The initial 12-test run is captured in [`evidence/test-results.txt`](evidence/test-results.txt).
 
-To create local demo evidence, capture the dashboard with **All versions** selected and the failed run detail visible, then capture the **v1.5.0 / Failed** filter. These views show both the release regression and the gate reason at trace level.
+To reproduce the local demo evidence, capture the dashboard with **All versions** selected and the failed run detail visible, then capture the **v1.5.0 / Failed** filter. These views show both the release regression and the gate reason at trace level.
+
+## Local demo evidence
+
+These screenshots show the dashboard running on the author's laptop at `127.0.0.1:8002`. They use the bundled synthetic runs; they do not show real model traffic or customer data.
+
+**All releases:** 8 sample runs, 7 passes (87.5%), 1,450 ms p95 latency, and $0.132 illustrative cost. The release comparison shows the `v1.5.0` pass-rate regression alongside its lower average latency and cost.
+
+![Local observability dashboard with all releases, run metrics, release comparison, and failed trace selected](evidence/dashboard-all-releases.png)
+
+**Failed run detail:** selecting `v1.5.0` and **Failed** isolates the restricted-account trace. Its quality score is 84.7, policy adherence is 45%, and the safety gate fails. The 0% pass rate in this filtered view describes this single failed run; the full `v1.5.0` cohort passes 3 of 4 runs.
+
+![Local dashboard filtered to the failed v1.5.0 restricted-account trace and its gate reasons](evidence/dashboard-v1.5.0-failed-run.png)
+
+**Local test run:** all 12 unit tests passed on the author's laptop.
+
+![PowerShell output showing all 12 AI observability and evaluation tests passing](evidence/test-run-local.png)
 
 ## How the evaluation works
 

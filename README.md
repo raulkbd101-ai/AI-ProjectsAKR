@@ -36,6 +36,7 @@ A local dashboard for synthetic AI traces, deterministic quality and safety gate
 - [Dashboard application](projects/ai-observability-evaluation-starter/app.py)
 - [Evaluation logic](projects/ai-observability-evaluation-starter/observability.py)
 - [Automated test output](projects/ai-observability-evaluation-starter/evidence/test-results.txt)
+- [Local dashboard and test screenshots](projects/ai-observability-evaluation-starter/evidence/)
 
 ## How to use this portfolio
 

@@ -26,6 +26,7 @@ A local Model Context Protocol server that makes read-only portfolio analytics d
 - [Project README and run instructions](projects/mcp-analytics-server/README.md)
 - [MCP server](projects/mcp-analytics-server/server.py)
 - [Test evidence](projects/mcp-analytics-server/evidence/test-results.txt)
+- [Inspector demo and local test screenshots](projects/mcp-analytics-server/evidence/)
 
 ## How to use this portfolio
 

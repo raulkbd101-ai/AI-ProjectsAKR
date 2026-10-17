@@ -44,7 +44,19 @@ From the project directory, with the virtual environment active:
 python -m unittest discover -s tests -v
 ```
 
-The tests cover the calculation logic plus MCP tool discovery and calls through the SDK's in-memory client. Captured test output is in [`evidence/test-results.txt`](evidence/test-results.txt). Local Inspector screenshots will be added after a hands-on run.
+The tests cover the calculation logic plus MCP tool discovery and calls through the SDK's in-memory client. Captured test output is in [`evidence/test-results.txt`](evidence/test-results.txt).
+
+## Local run evidence
+
+The following screenshots were captured from the MCP Inspector and PowerShell on the author's laptop. The Inspector connected to **Synthetic Portfolio Analytics** and successfully called `get_portfolio_summary` for `2026-09`; the structured output matches the documented sample totals. The PowerShell run shows all 10 unit and MCP contract tests passing.
+
+**Inspector — September 2026 summary:** $342,000 spend, $506,000 modeled value, $164,000 modeled net value, 73.8% weighted adoption, and 5 open risks. All values come from synthetic data.
+
+![MCP Inspector connected to Synthetic Portfolio Analytics, showing successful September portfolio summary and structured output](evidence/inspector-summary-september-2026.png)
+
+**Local tests:** all 10 tests passed in 0.493 seconds.
+
+![PowerShell test output showing all 10 MCP analytics server tests passing](evidence/local-test-run.png)
 
 ## Follow the request path
 

@@ -19,6 +19,14 @@ A local dashboard over synthetic cloud spend. It compares team budgets, shows sp
 - [Dashboard application](projects/finops-cloud-cost-workbench/app.py)
 - [Test evidence](projects/finops-cloud-cost-workbench/evidence/test-results.txt)
 
+### MCP Analytics Server
+
+A local Model Context Protocol server that makes read-only portfolio analytics discoverable as structured tools over synthetic enterprise AI program data. It includes an MCP resource, a review prompt, and in-memory client tests.
+
+- [Project README and run instructions](projects/mcp-analytics-server/README.md)
+- [MCP server](projects/mcp-analytics-server/server.py)
+- [Test evidence](projects/mcp-analytics-server/evidence/test-results.txt)
+
 ## How to use this portfolio
 
 Start with the project README, run the example locally, then inspect the code path from request to policy check to query and audit record. The projects are learning artifacts and reference patterns, not production security products.

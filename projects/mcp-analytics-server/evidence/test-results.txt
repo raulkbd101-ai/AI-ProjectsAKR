@@ -1,0 +1,18 @@
+Command: python -m unittest discover -s tests -v
+Environment: Python 3.12.14; MCP Python SDK 2.3.0
+
+test_adoption_is_weighted_by_eligible_users (test_analytics.AnalyticsTests.test_adoption_is_weighted_by_eligible_users) ... ok
+test_available_data_is_discoverable (test_analytics.AnalyticsTests.test_available_data_is_discoverable) ... ok
+test_period_comparison_uses_to_minus_from (test_analytics.AnalyticsTests.test_period_comparison_uses_to_minus_from) ... ok
+test_period_validation (test_analytics.AnalyticsTests.test_period_validation) ... ok
+test_program_detail_contains_all_sample_periods (test_analytics.AnalyticsTests.test_program_detail_contains_all_sample_periods) ... ok
+test_program_validation (test_analytics.AnalyticsTests.test_program_validation) ... ok
+test_september_portfolio_totals (test_analytics.AnalyticsTests.test_september_portfolio_totals) ... ok
+test_client_discovers_tools_and_calls_summary (test_mcp_server.MCPServerContractTests.test_client_discovers_tools_and_calls_summary) ... ok
+test_invalid_period_returns_actionable_tool_result (test_mcp_server.MCPServerContractTests.test_invalid_period_returns_actionable_tool_result) ... ok
+test_server_exposes_resource_and_prompt (test_mcp_server.MCPServerContractTests.test_server_exposes_resource_and_prompt) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.254s
+
+OK

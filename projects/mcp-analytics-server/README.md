@@ -30,6 +30,7 @@ If PowerShell blocks activation, skip activation and call the virtual environmen
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m pip install uv
+$env:Path = "$PWD\.venv\Scripts;$env:Path"
 .\.venv\Scripts\mcp.exe dev server.py
 ```
 

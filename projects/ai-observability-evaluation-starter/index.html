@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Observability &amp; Evaluation Starter</title>
+  <style>
+    :root{color-scheme:light;--ink:#182235;--muted:#65728a;--line:#dce4ee;--paper:#f4f7fb;--card:#fff;--blue:#315fc0;--blue-wash:#edf3ff;--teal:#087f76;--teal-wash:#e9f7f3;--red:#bd4544;--red-wash:#fff0ee;--amber:#a36b12;--amber-wash:#fff6e5;--shadow:0 10px 30px rgba(25,48,85,.045)}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.45 "Segoe UI",Arial,sans-serif}button,select{font:inherit}header{padding:28px clamp(18px,4vw,56px) 24px;background:#fff;border-bottom:1px solid var(--line)}.topline{display:flex;justify-content:space-between;align-items:center;gap:16px}.eyebrow{text-transform:uppercase;letter-spacing:.13em;color:var(--blue);font-weight:800;font-size:11px}.badge{border:1px solid #b5dfd3;background:var(--teal-wash);color:var(--teal);border-radius:999px;padding:7px 12px;font-size:11px;font-weight:800;white-space:nowrap}h1{margin:12px 0 4px;font-size:clamp(27px,3.5vw,40px);letter-spacing:-.035em}.subtitle{color:var(--muted);max-width:820px;margin:0}.wrap{max-width:1500px;margin:0 auto;padding:22px clamp(14px,3vw,40px) 40px}.controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}.control{display:grid;gap:6px;color:var(--muted);font-size:11px;font-weight:700}.control select{min-width:175px;border:1px solid #c8d3e2;border-radius:9px;background:#fff;color:var(--ink);padding:9px 12px;font-weight:650}.control-note{margin-left:auto;color:var(--muted);font-size:11px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(145px,1fr));gap:12px;margin:14px 0}.metric,.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}.metric{padding:16px}.metric-label{color:var(--muted);font-weight:650;font-size:12px}.metric-value{font-size:28px;letter-spacing:-.035em;font-weight:800;margin:7px 0 3px}.metric-note{color:var(--muted);font-size:11px}.metric .danger{color:var(--red);font-weight:750}.metric .good{color:var(--teal);font-weight:750}.layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(360px,.95fr);gap:14px}.panel{padding:18px;margin-bottom:14px;min-width:0}.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:13px}.panel h2{font-size:17px;margin:0;letter-spacing:-.015em}.panel-sub{font-size:11px;color:var(--muted)}.comparison{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.release{border:1px solid var(--line);border-radius:11px;padding:12px;background:#fbfcfe}.release h3{margin:0 0 9px;font-size:13px}.release-metric{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid #edf0f5;color:var(--muted);font-size:11px}.release-metric strong{color:var(--ink)}.delta{border:1px dashed #cbd6e5;border-radius:11px;padding:12px;display:grid;align-content:start;gap:7px}.delta h3{font-size:12px;margin:0}.delta-line{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}.delta-line strong.negative{color:var(--red)}.delta-line strong.positive{color:var(--teal)}.run-table-wrap{overflow:auto;max-height:520px}.run-table{border-collapse:collapse;width:100%;min-width:580px}.run-table th{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:9px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff}.run-table td{padding:10px 9px;border-bottom:1px solid #edf0f5;font-size:12px}.run-table tbody tr{cursor:pointer}.run-table tbody tr:hover{background:#f8faff}.run-table tbody tr.selected{background:var(--blue-wash)}.run-id{font-weight:750;color:var(--blue)}.pill{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:800}.pill.pass{color:var(--teal);background:var(--teal-wash)}.pill.fail{color:var(--red);background:var(--red-wash)}.detail-title{font-size:14px;font-weight:800}.detail-meta{color:var(--muted);font-size:11px;margin-top:3px}.score-row{display:flex;align-items:center;gap:9px;margin:10px 0}.score-name{width:126px;flex:none;color:var(--muted);font-size:11px}.score-track,.span-track{height:8px;background:#e9eef5;border-radius:9px;overflow:hidden;flex:1}.score-fill{height:100%;background:var(--blue);border-radius:9px}.score-fill.warn{background:var(--red)}.score-num{width:43px;text-align:right;font-weight:750;font-size:11px}.section-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:800;color:var(--muted);margin:18px 0 9px}.gate-box{background:var(--red-wash);border:1px solid #f1c4c0;border-radius:10px;padding:10px 12px;color:#963b39;font-size:11px}.gate-box.good{background:var(--teal-wash);border-color:#b8e1d5;color:#12685f}.span-row{display:grid;grid-template-columns:126px 1fr 42px;align-items:center;gap:9px;margin:8px 0}.span-name{font-size:11px;color:var(--ink)}.span-fill{height:100%;background:#85a6e4;border-radius:9px}.span-fill.flagged{background:#e0a144}.span-time{text-align:right;font-size:10px;color:var(--muted)}.excerpt{font-size:12px;color:#3b4960;background:#f7f9fc;border:1px solid var(--line);padding:11px;border-radius:9px}.footnote{margin:12px 3px;color:var(--muted);font-size:10px}.error{border:1px solid #f1c4c0;background:var(--red-wash);color:#963b39;border-radius:10px;padding:12px}.loading{color:var(--muted);padding:15px}.empty{color:var(--muted);font-size:12px;padding:16px 8px}
+    @media(max-width:970px){.layout{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.control-note{width:100%;margin-left:0}.comparison{grid-template-columns:repeat(2,1fr)}.delta{grid-column:1/-1}}
+    @media(max-width:540px){.metrics{grid-template-columns:1fr 1fr;gap:8px}.metric{padding:12px}.metric-value{font-size:23px}.comparison{grid-template-columns:1fr}.delta{grid-column:auto}.topline{align-items:flex-start}.badge{font-size:10px}.span-row{grid-template-columns:105px 1fr 38px}.score-name{width:105px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="topline"><div class="eyebrow">Enterprise AI · Run quality &amp; release health</div><span class="badge">LOCAL DEMO · SYNTHETIC RUNS</span></div>
+    <h1>AI Observability &amp; Evaluation Starter</h1>
+    <p class="subtitle">Inspect sample traces, quality gates, latency, and cost across two assistant releases. Follow a failed evaluation back to its trace spans.</p>
+  </header>
+  <main class="wrap">
+    <section class="controls" aria-label="Dashboard filters">
+      <label class="control">Release version<select id="versionFilter"></select></label>
+      <label class="control">Evaluation result<select id="outcomeFilter"></select></label>
+      <div class="control-note">Quality is a fixed weighted rubric. No live model calls or user data.</div>
+    </section>
+    <section id="metrics" class="metrics" aria-label="Run metrics"><div class="loading">Loading synthetic runs…</div></section>
+    <section class="panel">
+      <div class="panel-head"><h2>Release comparison</h2><span class="panel-sub">Complete sample cohorts · v1.5.0 minus v1.4.0</span></div>
+      <div id="comparison" class="comparison"></div>
+    </section>
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-head"><h2>Evaluation runs</h2><span id="runCount" class="panel-sub"></span></div>
+        <div class="run-table-wrap"><table class="run-table"><thead><tr><th>Run / release</th><th>Scenario</th><th>Quality</th><th>Latency</th><th>Cost</th><th>Result</th></tr></thead><tbody id="runRows"></tbody></table></div>
+        <div class="footnote">Select a row to inspect its evaluations and synthetic trace spans. A failed gate needs a human review before release.</div>
+      </section>
+      <section class="panel" id="detailPanel">
+        <div class="panel-head"><h2>Trace detail</h2><span class="panel-sub">Sample trace · evaluation record</span></div>
+        <div id="detail"><div class="empty">Select a run to inspect trace details.</div></div>
+      </section>
+    </div>
+    <p class="footnote">Prototype boundary: all run records, traces, evaluation scores, model labels, timings, and costs are invented. This dashboard is an educational example, not a production observability service or quality guarantee.</p>
+  </main>
+  <script>
+    const money = new Intl.NumberFormat("en-US", {style:"currency", currency:"USD", minimumFractionDigits:3, maximumFractionDigits:3});
+    const state = {data:null, selectedRun:"run-008"};
+    const $ = (id) => document.getElementById(id);
+    function esc(value){return String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+    function pct(value){return `${Number(value).toFixed(1)}%`;}
+    function populate(id, values, selected){const el=$(id);el.innerHTML=values.map(v=>`<option value="${esc(v)}" ${v===selected?"selected":""}>${esc(v)}</option>`).join("");}
+    async function load(){
+      const version=encodeURIComponent($("versionFilter").value||"All versions");
+      const outcome=encodeURIComponent($("outcomeFilter").value||"All runs");
+      try{
+        const response=await fetch(`/api/dashboard?version=${version}&outcome=${outcome}`);
+        const data=await response.json(); if(!response.ok) throw new Error(data.error||"Unable to load dashboard");
+        state.data=data;
+        if(!$('versionFilter').options.length) populate("versionFilter",["All versions",...data.versions],"All versions");
+        if(!$('outcomeFilter').options.length) populate("outcomeFilter",data.outcomes,"All runs");
+        render(data);
+      }catch(error){$("metrics").innerHTML=`<div class="error">${esc(error.message)}</div>`;}
+    }
+    function render(data){if(!data.runs.some(r=>r.run_id===state.selectedRun))state.selectedRun=data.runs[0]?.run_id||null;renderMetrics(data.summary);renderComparison(data.comparison);renderRows(data.runs);renderDetail(data.runs.find(r=>r.run_id===state.selectedRun));}
+    function renderMetrics(summary){
+      const passTone=summary.pass_rate_pct<85?"danger":"good";
+      $("metrics").innerHTML=[
+        ["Runs in selection",summary.run_count,`${summary.pass_count} met every configured gate`],
+        ["Evaluation pass rate",pct(summary.pass_rate_pct),`Weighted quality average ${summary.average_quality_score.toFixed(1)} / 100`,passTone],
+        ["P95 latency",`${summary.p95_latency_ms.toLocaleString()} ms`,`Average ${summary.average_latency_ms.toLocaleString()} ms`],
+        ["Sample run cost",money.format(summary.total_cost_usd),"Illustrative cost total for selected runs"]
+      ].map(([label,value,note,tone])=>`<article class="metric"><div class="metric-label">${esc(label)}</div><div class="metric-value">${esc(value)}</div><div class="metric-note ${tone||""}">${esc(note)}</div></article>`).join("");
+    }
+    function renderComparison(c){
+      const cards=[c.baseline,c.candidate].map(item=>`<article class="release"><h3>${esc(item.label)}</h3><div class="release-metric"><span>Passed</span><strong>${item.pass_count} / ${item.run_count} · ${pct(item.pass_rate_pct)}</strong></div><div class="release-metric"><span>Avg quality</span><strong>${item.average_quality_score.toFixed(1)} / 100</strong></div><div class="release-metric"><span>Avg latency</span><strong>${item.average_latency_ms.toLocaleString()} ms</strong></div><div class="release-metric"><span>Total cost</span><strong>${money.format(item.total_cost_usd)}</strong></div></article>`).join("");
+      const d=c.change;
+      const delta=`<article class="delta"><h3>Candidate change</h3><div class="delta-line"><span>Pass rate</span><strong class="${d.pass_rate_percentage_points<0?"negative":"positive"}">${d.pass_rate_percentage_points>0?"+":""}${d.pass_rate_percentage_points.toFixed(1)} pts</strong></div><div class="delta-line"><span>Avg latency</span><strong class="${d.average_latency_ms<0?"positive":"negative"}">${d.average_latency_ms>0?"+":""}${d.average_latency_ms.toLocaleString()} ms</strong></div><div class="delta-line"><span>Total cost</span><strong class="${d.total_cost_usd<0?"positive":"negative"}">${d.total_cost_usd>0?"+":""}${money.format(d.total_cost_usd)}</strong></div><div class="panel-sub">${esc(c.note)}</div></article>`;
+      $("comparison").innerHTML=cards+delta;
+    }
+    function renderRows(runs){
+      $("runCount").textContent=`${runs.length} matching run${runs.length===1?"":"s"}`;
+      if(!runs.length){$("runRows").innerHTML='<tr><td colspan="6" class="empty">No runs match these filters.</td></tr>';return;}
+      $("runRows").innerHTML=runs.map(run=>`<tr data-run="${esc(run.run_id)}" class="${run.run_id===state.selectedRun?"selected":""}"><td><span class="run-id">${esc(run.run_id)}</span><br><span class="panel-sub">${esc(run.version)}</span></td><td>${esc(run.scenario)}</td><td>${run.evaluation.quality_score.toFixed(1)}</td><td>${run.latency_ms.toLocaleString()} ms</td><td>${money.format(run.cost_usd)}</td><td><span class="pill ${run.evaluation.passed?"pass":"fail"}">${run.evaluation.passed?"PASS":"FAIL"}</span></td></tr>`).join("");
+      document.querySelectorAll("tr[data-run]").forEach(row=>row.addEventListener("click",()=>{state.selectedRun=row.dataset.run;renderRows(state.data.runs);renderDetail(state.data.runs.find(run=>run.run_id===state.selectedRun));}));
+    }
+    function renderDetail(run){
+      if(!run){$("detail").innerHTML='<div class="empty">No run selected by the current filters.</div>';return;}
+      const status=run.evaluation.passed?"Passed all release gates":"Failed one or more release gates";
+      const scores=Object.entries(run.scores).map(([name,value])=>`<div class="score-row"><span class="score-name">${esc(name.replaceAll("_"," "))}</span><div class="score-track"><div class="score-fill ${value<0.8?"warn":""}" style="width:${Math.max(0,Math.min(100,value*100))}%"></div></div><span class="score-num">${pct(value*100)}</span></div>`).join("");
+      const maxSpan=Math.max(...run.spans.map(span=>span.duration_ms),1);
+      const spans=run.spans.map(span=>`<div class="span-row"><span class="span-name">${esc(span.name)}</span><div class="span-track"><div class="span-fill ${span.status==="flagged"?"flagged":""}" style="width:${Math.max(3,span.duration_ms/maxSpan*100)}%"></div></div><span class="span-time">${span.duration_ms} ms</span></div>`).join("");
+      const reasons=run.evaluation.gate_reasons.length?`<div class="gate-box">${run.evaluation.gate_reasons.map(reason=>`<div>• ${esc(reason)}</div>`).join("")}</div>`:'<div class="gate-box good">All configured evaluation gates passed.</div>';
+      $("detail").innerHTML=`<div class="detail-title">${esc(run.scenario)} <span class="pill ${run.evaluation.passed?"pass":"fail"}">${run.evaluation.passed?"PASS":"FAIL"}</span></div><div class="detail-meta">${esc(run.run_id)} · ${esc(run.version)} · ${esc(run.timestamp)} · ${esc(run.model)} · prompt ${esc(run.prompt_version)}</div><div class="section-label">Deterministic evaluation · ${run.evaluation.quality_score.toFixed(1)} / 100</div>${scores}${reasons}<div class="section-label">Synthetic trace · ${run.latency_ms.toLocaleString()} ms end-to-end</div>${spans}<div class="section-label">Output excerpt · synthetic</div><div class="excerpt">${esc(run.output_excerpt)}</div><div class="detail-meta">Tokens: ${run.input_tokens.toLocaleString()} in / ${run.output_tokens.toLocaleString()} out · illustrative cost ${money.format(run.cost_usd)}</div>`;
+    }
+    $("versionFilter").addEventListener("change",load);$("outcomeFilter").addEventListener("change",load);load();
+  </script>
+</body>
+</html>

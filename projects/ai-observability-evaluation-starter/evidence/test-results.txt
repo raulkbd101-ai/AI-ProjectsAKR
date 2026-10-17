@@ -1,0 +1,17 @@
+test_all_runs_summary (test_observability.EvaluationTests.test_all_runs_summary) ... ok
+test_failed_safety_gate_fails_even_with_other_high_scores (test_observability.EvaluationTests.test_failed_safety_gate_fails_even_with_other_high_scores) ... ok
+test_invalid_outcome_is_rejected (test_observability.EvaluationTests.test_invalid_outcome_is_rejected) ... ok
+test_invalid_version_is_rejected (test_observability.EvaluationTests.test_invalid_version_is_rejected) ... ok
+test_outcome_filter_selects_only_failed_trace (test_observability.EvaluationTests.test_outcome_filter_selects_only_failed_trace) ... ok
+test_policy_gate_reason_is_explained (test_observability.EvaluationTests.test_policy_gate_reason_is_explained) ... ok
+test_quality_score_uses_documented_weighting (test_observability.EvaluationTests.test_quality_score_uses_documented_weighting) ... ok
+test_release_comparison_highlights_quality_regression_and_latency_gain (test_observability.EvaluationTests.test_release_comparison_highlights_quality_regression_and_latency_gain) ... ok
+test_release_summary_reports_latency_percentile (test_observability.EvaluationTests.test_release_summary_reports_latency_percentile) ... ok
+test_trace_spans_add_up_to_end_to_end_latency (test_observability.EvaluationTests.test_trace_spans_add_up_to_end_to_end_latency) ... ok
+test_version_filter_limits_runs_and_metrics (test_observability.EvaluationTests.test_version_filter_limits_runs_and_metrics) ... ok
+test_versions_and_outcomes_are_discoverable (test_observability.EvaluationTests.test_versions_and_outcomes_are_discoverable) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.002s
+
+OK

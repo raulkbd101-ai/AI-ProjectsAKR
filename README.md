@@ -38,6 +38,14 @@ A local dashboard for synthetic AI traces, deterministic quality and safety gate
 - [Automated test output](projects/ai-observability-evaluation-starter/evidence/test-results.txt)
 - [Local dashboard and test screenshots](projects/ai-observability-evaluation-starter/evidence/)
 
+### Enterprise Agent Control Plane
+
+A local governance simulation for agent registration, tool and data-scope policies, cost limits, human approval gates, and decision auditing. It records requests and decisions in memory; it never invokes an agent or executes a tool.
+
+- [Project README and run instructions](projects/enterprise-agent-control-plane/README.md)
+- [Control-plane policy model](projects/enterprise-agent-control-plane/control_plane.py)
+- [Automated test output](projects/enterprise-agent-control-plane/evidence/test-results.txt)
+
 ## How to use this portfolio
 
 Start with the project README, run the example locally, then inspect the code path from request to policy check to query and audit record. The projects are learning artifacts and reference patterns, not production security products.

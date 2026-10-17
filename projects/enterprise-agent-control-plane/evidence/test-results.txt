@@ -1,0 +1,21 @@
+test_approval_changes_state_and_adds_reviewer_audit_event_without_execution (test_control_plane.ControlPlaneTests.test_approval_changes_state_and_adds_reviewer_audit_event_without_execution) ... ok
+test_cost_over_agent_budget_is_denied (test_control_plane.ControlPlaneTests.test_cost_over_agent_budget_is_denied) ... ok
+test_in_scope_allowlisted_action_within_budget_is_allowed (test_control_plane.ControlPlaneTests.test_in_scope_allowlisted_action_within_budget_is_allowed) ... ok
+test_invalid_classification_is_rejected (test_control_plane.ControlPlaneTests.test_invalid_classification_is_rejected) ... ok
+test_negative_cost_is_rejected (test_control_plane.ControlPlaneTests.test_negative_cost_is_rejected) ... ok
+test_non_allowlisted_tool_is_denied (test_control_plane.ControlPlaneTests.test_non_allowlisted_tool_is_denied) ... ok
+test_non_finite_cost_is_rejected (test_control_plane.ControlPlaneTests.test_non_finite_cost_is_rejected) ... ok
+test_only_pending_requests_can_be_decided (test_control_plane.ControlPlaneTests.test_only_pending_requests_can_be_decided) ... ok
+test_out_of_scope_data_is_denied (test_control_plane.ControlPlaneTests.test_out_of_scope_data_is_denied) ... ok
+test_rejection_records_rejected_state (test_control_plane.ControlPlaneTests.test_rejection_records_rejected_state) ... ok
+test_restricted_classification_requires_approval (test_control_plane.ControlPlaneTests.test_restricted_classification_requires_approval) ... ok
+test_seeded_snapshot_has_three_examples_and_audit_events (test_control_plane.ControlPlaneTests.test_seeded_snapshot_has_three_examples_and_audit_events) ... ok
+test_sensitive_action_is_held_for_approval (test_control_plane.ControlPlaneTests.test_sensitive_action_is_held_for_approval) ... ok
+test_snapshot_is_a_defensive_copy (test_control_plane.ControlPlaneTests.test_snapshot_is_a_defensive_copy) ... ok
+test_unknown_agent_is_denied (test_control_plane.ControlPlaneTests.test_unknown_agent_is_denied) ... ok
+test_unknown_request_cannot_be_decided (test_control_plane.ControlPlaneTests.test_unknown_request_cannot_be_decided) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.002s
+
+OK

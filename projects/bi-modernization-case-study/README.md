@@ -39,6 +39,18 @@ Use the domain and migration-status filters to narrow the report portfolio. Insp
 
 The first wave is intended to prove shared KPI definitions and reconciliation. Later waves surface issues around metric definitions, ownership, customer mappings, and source freshness. The dashboard treats a report as ready only when its illustrative case record says it is ready; the metrics are not a production migration recommendation.
 
+## Local demo evidence
+
+The screenshots below were captured from the app running locally. They show the server and dashboard/API requests, the full nine-report portfolio, the cutover governance gates, and the Finance + Ready filtered view. All displayed records and figures remain synthetic case-study data.
+
+![PowerShell showing the local server startup and successful dashboard and case-study API requests](evidence/local-server-run.png)
+
+![BI modernization dashboard showing the portfolio summary, modeled cost comparison, and migration waves](evidence/portfolio-dashboard.png)
+
+![Report inventory and cutover governance gates](evidence/report-portfolio-and-governance.png)
+
+![Finance domain filtered to Ready reports](evidence/finance-ready-filter.png)
+
 ## Run tests
 
 From the project directory:

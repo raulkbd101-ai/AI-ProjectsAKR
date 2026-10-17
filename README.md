@@ -54,6 +54,7 @@ A local case study dashboard for a fictional legacy BI portfolio. It models migr
 - [Project README and run instructions](projects/bi-modernization-case-study/README.md)
 - [Case-study data and calculations](projects/bi-modernization-case-study/modernization.py)
 - [Automated test output](projects/bi-modernization-case-study/evidence/test-results.txt)
+- [Local dashboard, filtered view, and server screenshots](projects/bi-modernization-case-study/evidence/)
 
 ## How to use this portfolio
 

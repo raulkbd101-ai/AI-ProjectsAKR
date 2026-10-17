@@ -47,6 +47,14 @@ A local governance simulation for agent registration, tool and data-scope polici
 - [Automated test output](projects/enterprise-agent-control-plane/evidence/test-results.txt)
 - [Local dashboard and approval audit screenshots](projects/enterprise-agent-control-plane/evidence/)
 
+### BI Modernization Case Study
+
+A local case study dashboard for a fictional legacy BI portfolio. It models migration readiness, target cost and latency estimates, staged migration waves, blockers, and cutover governance gates.
+
+- [Project README and run instructions](projects/bi-modernization-case-study/README.md)
+- [Case-study data and calculations](projects/bi-modernization-case-study/modernization.py)
+- [Automated test output](projects/bi-modernization-case-study/evidence/test-results.txt)
+
 ## How to use this portfolio
 
 Start with the project README, run the example locally, then inspect the code path from request to policy check to query and audit record. The projects are learning artifacts and reference patterns, not production security products.

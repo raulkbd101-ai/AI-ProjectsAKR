@@ -45,6 +45,7 @@ A local governance simulation for agent registration, tool and data-scope polici
 - [Project README and run instructions](projects/enterprise-agent-control-plane/README.md)
 - [Control-plane policy model](projects/enterprise-agent-control-plane/control_plane.py)
 - [Automated test output](projects/enterprise-agent-control-plane/evidence/test-results.txt)
+- [Local dashboard and approval audit screenshots](projects/enterprise-agent-control-plane/evidence/)
 
 ## How to use this portfolio
 

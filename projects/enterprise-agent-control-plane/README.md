@@ -38,6 +38,20 @@ The dashboard starts with three synthetic examples: one allowed read, one refund
 
 The seeded state begins with 3 requests and 3 audit events. Requests submitted in the dashboard are added to that in-memory state. Restarting the server resets it.
 
+## Governance concept
+
+The key idea is to put a policy decision point between an agent and any action it might request. The control plane compares each request with a registered agent's declared tools, data scope, and cost limit. It allows requests that pass those checks, denies requests that fail, and sends configured sensitive actions to a human reviewer. The decision and reviewer are then written to the audit view.
+
+This separation makes policy outcomes visible and reviewable before a real execution layer is connected. In this starter, that execution layer is intentionally absent: approval only changes the recorded decision to `approved`; it does not trigger the requested action.
+
+## Local demo evidence
+
+These screenshots were captured from the running local demo. The overview shows the registry and policy checks. The audit screenshot shows an allowed request and a refund approval recorded by the reviewer; the interface explicitly reports that no action was executed.
+
+![Control-plane overview showing agent registry and policy path](evidence/control-plane-overview.png)
+
+![Approval queue and audit trail after a reviewer decision](evidence/approval-and-audit-trail.png)
+
 ## Run tests
 
 From the project directory:

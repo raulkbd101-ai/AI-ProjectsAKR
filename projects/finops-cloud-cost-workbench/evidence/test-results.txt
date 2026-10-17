@@ -1,0 +1,14 @@
+test_anomaly_rule_flags_only_model_serving_in_september (test_cost_model.DashboardDataTests.test_anomaly_rule_flags_only_model_serving_in_september) ... ok
+test_invalid_month_is_rejected (test_cost_model.DashboardDataTests.test_invalid_month_is_rejected) ... ok
+test_invalid_team_is_rejected (test_cost_model.DashboardDataTests.test_invalid_team_is_rejected) ... ok
+test_portfolio_total_and_budget_variance (test_cost_model.DashboardDataTests.test_portfolio_total_and_budget_variance) ... ok
+test_prior_month_with_no_threshold_crossing_has_no_anomaly (test_cost_model.DashboardDataTests.test_prior_month_with_no_threshold_crossing_has_no_anomaly) ... ok
+test_team_budgets_sum_to_all_teams_budget (test_cost_model.DashboardDataTests.test_team_budgets_sum_to_all_teams_budget) ... ok
+test_team_filter_limits_summary_and_service_rows (test_cost_model.DashboardDataTests.test_team_filter_limits_summary_and_service_rows) ... ok
+test_trend_contains_all_sample_periods (test_cost_model.DashboardDataTests.test_trend_contains_all_sample_periods) ... ok
+test_unallocated_shared_spend_reduces_coverage (test_cost_model.DashboardDataTests.test_unallocated_shared_spend_reduces_coverage) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.001s
+
+OK

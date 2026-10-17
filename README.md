@@ -11,6 +11,14 @@ An interactive local demo that maps a small set of analytics questions to approv
 - [Project README and run instructions](projects/governed-agentic-bi-demo/README.md)
 - [Application code](projects/governed-agentic-bi-demo/app.py)
 
+### FinOps Cloud Cost Workbench
+
+A local dashboard over synthetic cloud spend. It compares team budgets, shows spend without owner tags, and flags material service-cost increases using a transparent deterministic rule. Automated tests cover the calculations and filters.
+
+- [Project README and run instructions](projects/finops-cloud-cost-workbench/README.md)
+- [Dashboard application](projects/finops-cloud-cost-workbench/app.py)
+- [Test evidence](projects/finops-cloud-cost-workbench/evidence/test-results.txt)
+
 ## How to use this portfolio
 
 Start with the project README, run the example locally, then inspect the code path from request to policy check to query and audit record. The projects are learning artifacts and reference patterns, not production security products.

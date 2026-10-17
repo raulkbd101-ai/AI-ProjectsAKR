@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A local FinOps demo for cloud budget visibility, allocation coverage, and deterministic anomaly flags using synthetic data.">
+  <title>FinOps Cloud Cost Workbench</title>
+  <style>
+    :root { color-scheme: light; --ink:#132238; --muted:#5d6b7d; --blue:#2457a6; --line:#d9e1ec; --paper:#fff; --bg:#f2f5f9; --green:#147a51; --amber:#a85b00; --red:#ae3d31; }
+    * { box-sizing:border-box; }
+    body { margin:0; font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink); background:var(--bg); }
+    main { max-width:1160px; margin:0 auto; padding:32px 22px 56px; }
+    header { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:22px; }
+    h1 { margin:0; font-size:clamp(1.8rem,4vw,2.55rem); letter-spacing:-.035em; }
+    h2 { margin:0 0 16px; font-size:1.18rem; }
+    h3 { margin:0; font-size:1rem; }
+    p { color:var(--muted); margin:8px 0 0; }
+    .badge { flex:none; border:1px solid #bfdfd0; border-radius:999px; background:#e9f6ef; color:var(--green); padding:6px 11px; font-size:.82rem; font-weight:700; }
+    .filters,.panel,.metric { background:var(--paper); border:1px solid var(--line); border-radius:14px; box-shadow:0 6px 18px rgba(24,44,70,.035); }
+    .filters { display:flex; align-items:end; gap:16px; flex-wrap:wrap; padding:18px; margin-bottom:18px; }
+    label { display:grid; gap:6px; font-weight:650; font-size:.9rem; }
+    select { min-width:190px; padding:10px 12px; border:1px solid #b9c6d5; border-radius:8px; background:#fff; color:var(--ink); font:inherit; }
+    .small-note { margin-left:auto; font-size:.86rem; }
+    .metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:18px; }
+    .metric { padding:17px 18px; }
+    .metric-label { color:var(--muted); font-size:.84rem; font-weight:650; }
+    .metric-value { margin-top:6px; font-size:1.65rem; font-weight:760; letter-spacing:-.025em; }
+    .metric-sub { margin-top:2px; color:var(--muted); font-size:.8rem; }
+    .grid { display:grid; grid-template-columns:1.15fr .85fr; gap:18px; margin-bottom:18px; }
+    .panel { padding:20px; min-width:0; }
+    .section-head { display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:16px; }
+    .section-head span { color:var(--muted); font-size:.82rem; }
+    .bars { display:grid; gap:14px; }
+    .bar-row { display:grid; grid-template-columns:minmax(90px,130px) 1fr 88px; gap:12px; align-items:center; }
+    .bar-label { color:#35445a; font-size:.88rem; }
+    .bar-track { height:13px; background:#eaf0f6; border-radius:999px; overflow:hidden; }
+    .bar-fill { height:100%; background:var(--blue); border-radius:999px; }
+    .bar-fill.over { background:var(--red); }
+    .bar-amount { text-align:right; font-size:.86rem; font-weight:650; font-variant-numeric:tabular-nums; }
+    .anomaly-list { display:grid; gap:12px; }
+    .alert { background:#fff7e8; border:1px solid #f0d6a4; border-radius:10px; padding:13px 14px; }
+    .alert-title { display:flex; justify-content:space-between; gap:12px; font-weight:720; }
+    .alert p { font-size:.84rem; }
+    .pill { color:var(--amber); background:#ffedc7; padding:2px 8px; border-radius:999px; white-space:nowrap; font-size:.78rem; }
+    .empty { border:1px dashed var(--line); border-radius:10px; padding:18px; color:var(--muted); }
+    .table-wrap { overflow:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.9rem; }
+    th,td { padding:11px 10px; text-align:left; border-bottom:1px solid #e8edf3; }
+    th { color:var(--muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; }
+    td.numeric { text-align:right; font-variant-numeric:tabular-nums; }
+    .tag { font-size:.78rem; font-weight:700; }
+    .tag.yes { color:var(--green); } .tag.no { color:var(--amber); }
+    .variance.over { color:var(--red); font-weight:700; } .variance.under { color:var(--green); }
+    .trend { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; align-items:end; height:165px; padding-top:12px; }
+    .trend-col { display:grid; grid-template-rows:1fr auto; height:100%; align-items:end; text-align:center; color:var(--muted); font-size:.78rem; }
+    .trend-bars { height:128px; display:flex; align-items:end; justify-content:center; gap:5px; }
+    .trend-bar { width:min(32%,35px); min-height:3px; border-radius:5px 5px 0 0; background:#8aaddc; }
+    .trend-bar.budget { background:#e3ad62; opacity:.8; }
+    .legend { display:flex; gap:14px; justify-content:flex-end; margin-top:8px; font-size:.78rem; color:var(--muted); }
+    .legend i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; }
+    footer { color:var(--muted); font-size:.82rem; padding:8px 3px; }
+    footer strong { color:var(--ink); }
+    #error { color:var(--red); font-weight:650; }
+    @media(max-width:850px) { .metrics { grid-template-columns:repeat(2,1fr); } .grid { grid-template-columns:1fr; } }
+    @media(max-width:520px) { main { padding:22px 14px 40px; } header { display:block; } .badge { display:inline-block; margin-top:12px; } .metrics { gap:9px; } .metric { padding:13px; } .metric-value { font-size:1.3rem; } .small-note { margin:0; width:100%; } .bar-row { grid-template-columns:90px 1fr 75px; gap:8px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>FinOps Cloud Cost Workbench</h1>
+        <p>Explore budget health, allocation coverage, and cost changes using a small synthetic cloud-spend dataset.</p>
+      </div>
+      <span class="badge">Local demo · synthetic data</span>
+    </header>
+
+    <section class="filters" aria-label="Dashboard filters">
+      <label>Billing month
+        <select id="month" aria-label="Billing month"></select>
+      </label>
+      <label>Team
+        <select id="team" aria-label="Team"></select>
+      </label>
+      <p class="small-note">All figures are illustrative USD amounts. No cloud account is connected.</p>
+    </section>
+
+    <div id="error" role="alert" aria-live="polite"></div>
+    <section class="metrics" aria-label="Key metrics">
+      <article class="metric"><div class="metric-label">Selected month spend</div><div id="spend" class="metric-value">—</div><div id="spend-sub" class="metric-sub">Loading</div></article>
+      <article class="metric"><div class="metric-label">Budget utilization</div><div id="utilization" class="metric-value">—</div><div id="utilization-sub" class="metric-sub">Loading</div></article>
+      <article class="metric"><div class="metric-label">Unallocated spend</div><div id="unallocated" class="metric-value">—</div><div id="unallocated-sub" class="metric-sub">Loading</div></article>
+      <article class="metric"><div class="metric-label">Allocation coverage</div><div id="coverage" class="metric-value">—</div><div id="coverage-sub" class="metric-sub">Loading</div></article>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <div class="section-head"><h2>Spend by team</h2><span id="budget-total"></span></div>
+        <div id="team-bars" class="bars"></div>
+      </article>
+      <article class="panel">
+        <div class="section-head"><h2>Material cost changes</h2><span>Compared with up to 3 prior months</span></div>
+        <div id="anomalies" class="anomaly-list"></div>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <div class="section-head"><h2>Monthly trend</h2><span>Spend and team budget</span></div>
+        <div id="trend" class="trend"></div>
+        <div class="legend"><span><i style="background:#8aaddc"></i>Spend</span><span><i style="background:#e3ad62"></i>Budget</span></div>
+      </article>
+      <article class="panel">
+        <div class="section-head"><h2>Selected month detail</h2><span id="detail-month"></span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Team / service</th><th>Owner tag</th><th class="numeric">Spend</th></tr></thead>
+            <tbody id="services"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <footer><strong>Prototype boundary:</strong> deterministic calculations over invented data. This is a learning dashboard, not a billing integration, savings recommendation, or production control.</footer>
+  </main>
+  <script>
+    const monthSelect = document.querySelector("#month");
+    const teamSelect = document.querySelector("#team");
+    const monthLabels = {"2026-06":"Jun 2026","2026-07":"Jul 2026","2026-08":"Aug 2026","2026-09":"Sep 2026"};
+    const teams = ["All teams","AI Platform","Data Platform","Analytics","Shared Services"];
+    Object.entries(monthLabels).forEach(([value,label]) => monthSelect.add(new Option(label,value)));
+    monthSelect.value = "2026-09";
+    teams.forEach(team => teamSelect.add(new Option(team,team)));
+    teamSelect.value = "All teams";
+
+    const money = value => new Intl.NumberFormat("en-US", {style:"currency",currency:"USD",maximumFractionDigits:0}).format(value);
+    const el = selector => document.querySelector(selector);
+
+    async function refresh() {
+      el("#error").textContent = "";
+      const params = new URLSearchParams({month:monthSelect.value,team:teamSelect.value});
+      try {
+        const response = await fetch(`/api/dashboard?${params}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Dashboard request failed");
+        render(data);
+      } catch (error) {
+        el("#error").textContent = `Unable to load dashboard: ${error.message}`;
+      }
+    }
+
+    function render(data) {
+      el("#spend").textContent = money(data.total_spend);
+      el("#spend-sub").textContent = `${monthLabels[data.month]} · budget ${money(data.total_budget)}`;
+      el("#utilization").textContent = `${data.budget_utilization_pct}%`;
+      el("#utilization-sub").innerHTML = `<span class="variance ${data.budget_variance > 0 ? "over" : "under"}">${money(Math.abs(data.budget_variance))} ${data.budget_variance > 0 ? "over" : "under"} budget</span>`;
+      el("#unallocated").textContent = money(data.unallocated_spend);
+      el("#unallocated-sub").textContent = "Spend without an owner tag";
+      el("#coverage").textContent = `${data.allocation_coverage_pct}%`;
+      el("#coverage-sub").textContent = "Spend mapped to an owner";
+      el("#budget-total").textContent = `Budget ${money(data.total_budget)}`;
+      el("#detail-month").textContent = monthLabels[data.month];
+
+      const maxTeamSpend = Math.max(...data.team_summaries.map(x => x.spend),1);
+      el("#team-bars").innerHTML = data.team_summaries.map(row => `
+        <div class="bar-row">
+          <span class="bar-label">${row.team}</span>
+          <div class="bar-track" title="${money(row.spend)} of ${money(row.budget)} budget"><div class="bar-fill ${row.variance > 0 ? "over" : ""}" style="width:${Math.min(row.spend / maxTeamSpend * 100,100)}%"></div></div>
+          <span class="bar-amount">${money(row.spend)}</span>
+        </div>`).join("") || '<div class="empty">No team rows for this selection.</div>';
+
+      el("#anomalies").innerHTML = data.anomalies.length ? data.anomalies.map(item => `
+        <div class="alert">
+          <div class="alert-title"><span>${item.team} · ${item.service}</span><span class="pill">+${item.increase_pct}%</span></div>
+          <p>${money(item.current_cost)} current vs ${money(item.baseline)} average; increase of ${money(item.increase)}. Rule: at least ${data.anomaly_rule.minimum_increase_pct}% and ${money(data.anomaly_rule.minimum_increase_dollars)}.</p>
+        </div>`).join("") : '<div class="empty">No service meets the configured material-change threshold for this selection.</div>';
+
+      const maxTrend = Math.max(...data.trend.flatMap(x => [x.spend,x.budget]),1);
+      el("#trend").innerHTML = data.trend.map(item => `
+        <div class="trend-col"><div class="trend-bars" title="${monthLabels[item.month]}: ${money(item.spend)} spend; ${money(item.budget)} budget">
+          <div class="trend-bar" style="height:${Math.max(item.spend/maxTrend*100,2)}%"></div>
+          <div class="trend-bar budget" style="height:${Math.max(item.budget/maxTrend*100,2)}%"></div>
+        </div><span>${monthLabels[item.month]}</span></div>`).join("");
+
+      el("#services").innerHTML = data.service_rows.map(row => `
+        <tr><td><strong>${row.team}</strong><br><span style="color:var(--muted)">${row.service}</span></td>
+        <td class="tag ${row.owner_tagged ? "yes" : "no"}">${row.owner_tagged ? "Tagged" : "Missing"}</td>
+        <td class="numeric">${money(row.cost)}</td></tr>`).join("") || '<tr><td colspan="3">No services for this selection.</td></tr>';
+    }
+
+    monthSelect.addEventListener("change",refresh);
+    teamSelect.addEventListener("change",refresh);
+    refresh();
+  </script>
+</body>
+</html>

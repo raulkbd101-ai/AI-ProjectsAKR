@@ -36,7 +36,23 @@ From the project directory:
 python -m unittest discover -s tests -v
 ```
 
-The captured run is in [`evidence/test-results.txt`](evidence/test-results.txt). The suite checks the same deterministic rules shown in the dashboard.
+The captured run is in [`evidence/test-results.txt`](evidence/test-results.txt). The suite checks the same deterministic rules shown in the dashboard. The user-run command-line result is also captured in [`evidence/local-test-run.png`](evidence/local-test-run.png).
+
+## Local demo evidence
+
+The screenshots below were captured from the dashboard running on the author's laptop at `127.0.0.1:8001`, using the included synthetic dataset. They show the September 2026 budget overrun and material Model Serving increase, and the June 2026 comparison with no material-change flag. These are reproducible demo outputs, not cloud-account data or production findings.
+
+**September 2026 — all teams:** $28,000 spend against a $27,700 budget (101.1% utilization), $2,100 unallocated, and 92.5% allocation coverage. Model Serving is flagged at +65.3% against its prior-month average.
+
+![FinOps dashboard showing September 2026 portfolio metrics and the Model Serving cost-change flag](evidence/dashboard-september-2026.png)
+
+**June 2026 — all teams:** $21,500 spend against a $27,700 budget (77.6% utilization), with no service meeting the material-change threshold.
+
+![FinOps dashboard showing June 2026 portfolio metrics with no material cost-change flag](evidence/dashboard-june-2026.png)
+
+The user ran the project checks locally: all 9 unit tests passed.
+
+![PowerShell output showing all 9 FinOps project unit tests passing](evidence/local-test-run.png)
 
 ## How the calculations work
 

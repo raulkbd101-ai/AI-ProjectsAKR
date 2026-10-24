@@ -1,6 +1,6 @@
 # Enterprise Agent Control Plane
 
-Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of this project's original code and materials is not granted without separate written permission. See [LICENSE](LICENSE).
+Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of current versions is not granted without separate written permission. See [LICENSE](LICENSE). Earlier versions distributed under MIT retain their historical terms; see [LICENSE-MIT-PRIOR-VERSIONS.txt](LICENSE-MIT-PRIOR-VERSIONS.txt).
 
 A small, local governance simulation for reviewing what enterprise agents may request. It combines an agent registry, tool allowlists, data scopes, per-request cost limits, human approval gates, and a chronological audit view.
 

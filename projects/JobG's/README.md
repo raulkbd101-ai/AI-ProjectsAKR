@@ -1,5 +1,7 @@
 # JobG's — Personal Job Search Engine
 
+Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of this project's original code and materials is not granted without separate written permission. See [LICENSE](LICENSE). Public GitHub availability does not automatically detect or prevent copying.
+
 **Version:** 1.0.0
 
 **Status:** Local, single-user MVP

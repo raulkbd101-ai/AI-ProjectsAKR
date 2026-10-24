@@ -1,5 +1,7 @@
 # BI Modernization Case Study
 
+Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of this project's original code and materials is not granted without separate written permission. See [LICENSE](LICENSE).
+
 A local, interactive case study for planning a legacy business-intelligence migration. The dashboard uses a fictional nine-report portfolio to explore migration readiness, modeled platform cost and latency changes, sequencing, KPI reconciliation, and cutover governance.
 
 ## What it demonstrates

@@ -1,5 +1,7 @@
 # FinOps Cloud Cost Workbench
 
+Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of this project's original code and materials is not granted without separate written permission. See [LICENSE](LICENSE).
+
 A small local FinOps demo for reviewing cloud spend against team budgets, checking allocation coverage, and flagging material service-cost increases. It uses invented data and deterministic calculations; it makes no cloud calls and uses no LLM.
 
 This project translates enterprise platform, SRE, and FinOps experience into a runnable learning artifact. It models cost-control questions without presenting synthetic results as personal business outcomes. The data and thresholds here are illustrative.

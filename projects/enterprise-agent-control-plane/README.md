@@ -1,5 +1,7 @@
 # Enterprise Agent Control Plane
 
+Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of this project's original code and materials is not granted without separate written permission. See [LICENSE](LICENSE).
+
 A small, local governance simulation for reviewing what enterprise agents may request. It combines an agent registry, tool allowlists, data scopes, per-request cost limits, human approval gates, and a chronological audit view.
 
 ## What it demonstrates

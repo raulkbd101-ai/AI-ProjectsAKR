@@ -1,5 +1,7 @@
 # AI Observability & Evaluation Starter
 
+Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of this project's original code and materials is not granted without separate written permission. See [LICENSE](LICENSE).
+
 A local dashboard for inspecting synthetic AI assistant traces and applying transparent, deterministic quality gates. Compare two sample releases across evaluation pass rate, latency, and illustrative cost; select a failed run to inspect its trace spans and gate reasons.
 
 This project makes the observability and evaluation workflow concrete without calling an LLM, cloud service, or external API. Every run, score, trace span, model label, timestamp, token count, and cost is invented for the demo.

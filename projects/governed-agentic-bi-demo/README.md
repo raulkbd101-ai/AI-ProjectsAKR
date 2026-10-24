@@ -1,6 +1,6 @@
 # Governed Agentic BI Demo
 
-Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of this project's original code and materials is not granted without separate written permission. See [LICENSE](LICENSE).
+Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of current versions is not granted without separate written permission. See [LICENSE](LICENSE). Earlier versions distributed under MIT retain their historical terms; see [LICENSE-MIT-PRIOR-VERSIONS.txt](LICENSE-MIT-PRIOR-VERSIONS.txt).
 
 This project shows a small, inspectable version of a pattern used in enterprise analytics: receive a request, map it to an approved operation, check what the caller may see, run a constrained query, and record the decision.
 

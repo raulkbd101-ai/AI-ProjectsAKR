@@ -1,6 +1,6 @@
 # AI Observability & Evaluation Starter
 
-Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of this project's original code and materials is not granted without separate written permission. See [LICENSE](LICENSE).
+Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of current versions is not granted without separate written permission. See [LICENSE](LICENSE). Earlier versions distributed under MIT retain their historical terms; see [LICENSE-MIT-PRIOR-VERSIONS.txt](LICENSE-MIT-PRIOR-VERSIONS.txt).
 
 A local dashboard for inspecting synthetic AI assistant traces and applying transparent, deterministic quality gates. Compare two sample releases across evaluation pass rate, latency, and illustrative cost; select a failed run to inspect its trace spans and gate reasons.
 

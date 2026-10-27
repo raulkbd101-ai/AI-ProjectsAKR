@@ -98,3 +98,5 @@ git push origin v1.1.0
 ```
 
 See [CHANGELOG.md](CHANGELOG.md) for the release history and commit notes. AI-assisted semantic matching and evidence-linked resume draft suggestions are future work, subject to human review.
+
+For the longer learning and delivery plan, see the [24-week AI engineering roadmap](AI_UPSKILLING_ROADMAP.md), including the first four weeks on local retrieval, vector search, and evidence-grounded RAG.

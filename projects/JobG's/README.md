@@ -39,6 +39,8 @@ JobG's/
     ├── database.py            # SQLite setup, sample profile, daily count
     ├── matcher.py             # Explainable profile-term scan (1.1 baseline)
     ├── evidence_profile.py    # Typed claim model and local evidence storage
+    ├── templates/
+    │   └── evidence.html      # Evidence dossier page and navigation
     ├── requirements.txt       # Runtime dependencies
     ├── .gitignore             # Excludes local data and environment files
     └── tests/                 # Automated unit checks

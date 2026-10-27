@@ -15,7 +15,7 @@ JobG's stores each candidate statement as a **claim** with a short note about it
 | `evidence_status` | What you have recorded about support for the claim | `self_reported`, `reference_added`, or `supporting_material_noted` |
 | `confidentiality` | How cautiously JobG should treat the note | `private` by default; use `confidential` when appropriate |
 
-The evidence status is self-reported metadata. JobG's does not verify that a document exists or that a claim is true. Do not paste confidential company documents, customer details, personal information about colleagues, or secrets into the evidence notes. Keep sensitive source materials where they already belong and store only a short description or a reference you can understand later.
+The evidence status is self-reported metadata. JobG's does not verify that a document exists or that a claim is true. Confidentiality labels are descriptive only: the local app has no login and its SQLite database is not encrypted. Do not paste confidential company documents, customer details, personal information about colleagues, or secrets into the evidence notes. Keep sensitive source materials where they already belong and store only a short description or a reference you can understand later.
 
 ## Safe placeholder example
 

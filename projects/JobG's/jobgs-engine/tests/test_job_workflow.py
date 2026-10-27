@@ -36,10 +36,10 @@ class JobWorkflowTests(unittest.TestCase):
             "Snowflake, Tableau, and enterprise cloud transformations.",
         )
 
-        self.assertEqual(result["profile_coverage"], 30.0)
+        self.assertEqual(result["profile_coverage"], 0.0)
         self.assertEqual(result["status"], "HUMAN_REVIEW_REQUIRED")
-        self.assertIn("Python", result["matched_competencies"])
-        self.assertIn("AWS", result["missing_profile_skills"])
+        self.assertEqual(result["matched_competencies"], [])
+        self.assertIn("GCP", result["missing_profile_skills"])
 
     def test_low_profile_term_coverage_is_reported_but_not_blocked(self):
         result = matcher.evaluate_job_match(

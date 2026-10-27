@@ -2,7 +2,9 @@
 
 Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of this project's original code and materials is not granted without separate written permission. See [LICENSE](LICENSE). Public GitHub availability does not automatically detect or prevent copying.
 
-**Version:** 1.1.0 (personal, local MVP)
+**Latest tag:** `v1.2` (evidence dossier, persona tags, and reviewable tech bridges)
+
+**Next release target:** `v1.3.0` (local hybrid evidence retrieval; proposed, not yet released)
 
 **Status:** Local, single-user MVP
 
@@ -17,7 +19,7 @@ Version 1.0 establishes the first governed workflow:
 3. Review which profile skill terms are present and absent in the description.
 4. Decide whether to log the role yourself, subject to the daily cap.
 
-The candidate remains in control. This release does **not** search career sites, call an AI model, rewrite a resume, or submit applications. Its profile-term scan reports only whether saved skill terms literally appear in a pasted JD; it does not evaluate skill depth, transferable experience, or interview likelihood. The evidence profile provides a structured place for candidate-authored claims and support notes, but does not independently verify them. See [EVIDENCE_PROFILE_GUIDE.md](EVIDENCE_PROFILE_GUIDE.md) for the claim structure and [MVP_BUILD_PLAN.md](MVP_BUILD_PLAN.md) for the learning path.
+The candidate remains in control. Job descriptions are supplied manually; the app does not crawl job sites, rewrite a resume, or submit applications. The dashboard's profile-term scan reports literal skill mentions and does not estimate job fit or interview likelihood. Evidence claims are candidate-authored and not independently verified. The current `rag_matcher.py` prototype separately ranks saved evidence using keyword overlap and embeddings from local Ollama. It is a command-line retrieval tool, not a generative RAG assessment, and is not wired into the dashboard. See [EVIDENCE_PROFILE_GUIDE.md](EVIDENCE_PROFILE_GUIDE.md), [RAG_MATCHER_GUIDE.md](jobgs-engine/RAG_MATCHER_GUIDE.md), and [MVP_BUILD_PLAN.md](MVP_BUILD_PLAN.md) for details.
 
 ## Technology
 
@@ -27,6 +29,7 @@ The candidate remains in control. This release does **not** search career sites,
 - Pydantic for validating structured evidence claims
 - SQLite for the local profile and application log
 - Uvicorn as the development server
+- Ollama with `nomic-embed-text` for optional, local-only embeddings in the retrieval prototype
 - GitHub Actions for automated syntax and unit checks on pull requests
 
 ## Project structure
@@ -34,11 +37,17 @@ The candidate remains in control. This release does **not** search career sites,
 ```text
 JobG's/
 ├── README.md
+├── AI_UPSKILLING_ROADMAP.md
+├── docs/
+│   ├── adr/                    # Architecture decisions and learning notes
+│   └── evaluations/            # Sanitized retrieval evaluations
 └── jobgs-engine/
     ├── app.py                 # FastAPI interface and review/confirm flow
     ├── database.py            # SQLite setup, sample profile, daily count
-    ├── matcher.py             # Explainable profile-term scan (1.1 baseline)
-    ├── evidence_profile.py    # Typed claim model and local evidence storage
+    ├── matcher.py             # Explainable term scan and evidence-supported bridges
+    ├── evidence.py            # Typed claim model and local evidence storage
+    ├── rag_matcher.py         # Standalone local hybrid evidence retrieval prototype
+    ├── RAG_MATCHER_GUIDE.md   # Local model setup and usage
     ├── templates/
     │   └── evidence.html      # Evidence dossier page and navigation
     ├── requirements.txt       # Runtime dependencies
@@ -72,10 +81,19 @@ From `jobgs-engine` with the virtual environment active:
 
 ```powershell
 python -m unittest discover -s tests -v
-python -m compileall -q app.py database.py matcher.py evidence_profile.py
+python -m compileall -q app.py database.py matcher.py evidence.py evidence_profile.py rag_matcher.py
 ```
 
-GitHub Actions runs these checks for pull requests and pushes that change this project.
+GitHub Actions runs these checks for pull requests and pushes that change this project. The Ollama retrieval smoke test is optional because it requires Ollama and a local model to be installed.
+
+To try local retrieval from `jobgs-engine`, install Ollama separately, pull its embedding model, and run:
+
+```powershell
+ollama pull nomic-embed-text
+python rag_matcher.py "cloud data platform architecture and BI modernization" --persona Architect
+```
+
+The first command downloads model files to your PC. The Python code sends embedding requests to Ollama on loopback; it does not call a hosted inference API. The vector cache is derived from SQLite evidence and can be rebuilt. See the [retrieval guide](jobgs-engine/RAG_MATCHER_GUIDE.md).
 
 ## Git and release workflow
 
@@ -88,15 +106,15 @@ git commit -m "feat(jobgs): describe the change"
 git push -u origin feature/short-description
 ```
 
-After the 1.1 pull request is reviewed, merged into `main`, and CI passes, create the release tag from the updated `main`:
+For the proposed `v1.3.0` release, first merge the reviewed pull request into `main` and wait for CI to pass. Then create the tag from the updated `main`:
 
 ```powershell
 git switch main
 git pull
-git tag -a v1.1.0 -m "JobG's v1.1.0"
-git push origin v1.1.0
+git tag -a v1.3.0 -m "JobG's v1.3.0 — local hybrid evidence retrieval"
+git push origin v1.3.0
 ```
 
-See [CHANGELOG.md](CHANGELOG.md) for the release history and commit notes. AI-assisted semantic matching and evidence-linked resume draft suggestions are future work, subject to human review.
+See [CHANGELOG.md](CHANGELOG.md) for the release history and commit notes. Generative RAG analysis and resume-draft suggestions remain future work and must be grounded in evidence and reviewed by the candidate.
 
 For the longer learning and delivery plan, see the [24-week AI engineering roadmap](AI_UPSKILLING_ROADMAP.md), including the first four weeks on local retrieval, vector search, and evidence-grounded RAG.

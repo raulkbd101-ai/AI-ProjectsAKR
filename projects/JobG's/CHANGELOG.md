@@ -1,6 +1,41 @@
 # Changelog
 
-All notable JobG's changes are recorded here. This project follows Semantic Versioning for tagged releases.
+All notable JobG's changes are recorded here. Existing tags are preserved as published; planned releases use Semantic Versioning.
+
+## [Unreleased] — proposed v1.3.0
+
+### Added
+
+- Standalone `rag_matcher.py` prototype that retrieves candidate-authored evidence by combining lexical overlap with local Ollama embeddings.
+- Rebuildable `evidence_embeddings` cache in SQLite, keyed by evidence row and model; `profile_evidence` remains the source of truth.
+- Persona-aware retrieval, confidential-claim exclusion by default, and a keyword-only fallback when local embeddings are unavailable.
+- Retrieval guide, 24-week AI learning roadmap, and documentation spaces for architecture decisions and sanitized evaluations.
+- Unit coverage for persona filtering, confidential-claim exclusion, hybrid-score composition, vector-cache persistence, and model-unavailable fallback.
+
+### Scope and limitations
+
+- The retrieval prototype is a CLI module and is not integrated into the FastAPI dashboard.
+- It does not generate a RAG narrative, assess job fit, rewrite resumes, scrape job boards, or submit applications.
+- Ollama model files must be downloaded once. Runtime embedding requests use the local loopback service; no hosted inference API is configured.
+- Retrieval scores indicate evidence-search relevance only, not claim truth, candidate proficiency, hiring likelihood, or job fit.
+- `v1.2` remains an existing tag for the evidence dossier and persona-aware transferable bridge foundation. Do not move or overwrite that tag.
+
+### Verification
+
+- Local Python 3.14 checks: all 23 unit tests pass; the retrieval tests use a temporary SQLite database and mocked embedding responses.
+- The CI syntax step now includes `rag_matcher.py` and the evidence modules.
+- Keep the Ollama-dependent smoke command optional; CI does not download model weights or call Ollama.
+
+### Commit note
+
+```text
+feat(jobgs): add local hybrid evidence retrieval prototype
+```
+
+## [1.2] — tagged evidence and bridge foundation
+
+- Added persona-specific evidence claims and reviewable, evidence-supported transferable technology bridge drafts.
+- Kept claims candidate-provided and human-reviewed; the bridge drafts do not claim direct experience with an adjacent target technology.
 
 ## [1.1.0] — 2026-10-27
 
@@ -63,9 +98,3 @@ feat(jobgs): release local job-search workflow v1.0.0
 ```
 
 Release contents: local FastAPI UI, SQLite persistence, heuristic matcher, review-and-confirm flow, dependency manifest, automated CI checks, and user/developer documentation.
-
-## Planned: 1.2.0
-
-- AI-assisted semantic job/profile analysis.
-- Evidence-linked resume and cover-note draft suggestions for human review.
-- No automatic application submission.

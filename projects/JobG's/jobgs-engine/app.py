@@ -1,13 +1,20 @@
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse
-from jinja2 import Template
+from fastapi.responses import HTMLResponse, RedirectResponse
+from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
+from pathlib import Path
 import sqlite3
 import uuid
 from datetime import date
 from database import DB_FILE, check_daily_limit
 from matcher import evaluate_job_match
+from evidence import list_evidence_claims, add_evidence_claim, EvidenceClaim
+from pydantic import ValidationError
 
 app = FastAPI(title="JobG's - Personal Job Search Assistant")
+TEMPLATE_ENV = Environment(
+    loader=FileSystemLoader(Path(__file__).resolve().parent / "templates"),
+    autoescape=select_autoescape(("html", "xml")),
+)
 
 # In-memory secure state store for pending evaluations (Prevents tampering between review and logging)
 PENDING_EVALUATIONS = {}
@@ -37,10 +44,18 @@ HTML_TEMPLATE = """
         .blocked { color: #f87171; font-weight: bold; }
         pre { background: #1e293b; padding: 12px; border-radius: 6px; overflow-x: auto; color: #e2e8f0; font-size: 13px; }
         .msg { margin-top: 20px; padding: 12px; background: #334155; border-radius: 6px; text-align: center; font-weight: bold; }
+        .nav-links { display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav-links a { display: inline-block; padding: 10px 14px; border-radius: 6px; background: #334155; color: #f8fafc; text-decoration: none; font-weight: bold; }
+        .nav-links a[aria-current="page"] { background: #0284c7; }
+        .nav-links a:hover { background: #0369a1; }
     </style>
 </head>
 <body>
     <div class="container">
+        <nav class="nav-links" aria-label="Main navigation">
+            <a href="/" aria-current="page">Dashboard</a>
+            <a href="/evidence">Evidence Dossier</a>
+        </nav>
         <h1>JobG's: Personal Job Search Assistant</h1>
         <p>Local MVP: scan a pasted job description for terms already present in your profile, then review the result yourself.</p>
 
@@ -85,6 +100,18 @@ HTML_TEMPLATE = """
             <p><strong>Not mentioned:</strong> {{ result.missing_profile_skills | join(', ') if result.missing_profile_skills else 'All listed skills were mentioned' }}</p>
             <p><strong>Profile domains explicitly mentioned:</strong> {{ result.matched_domains | join(', ') if result.matched_domains else 'None' }}</p>
 
+            {% if result.transferable_bridges %}
+            <h4>Transferable technology bridge drafts — review before reuse</h4>
+            <p>These describe adjacent experience only; they do not claim hands-on use of the target technology.</p>
+            {% for bridge in result.transferable_bridges %}
+            <div class="result-box">
+                <p><strong>{{ bridge.source_technology }} → {{ bridge.target_technology }}</strong> (based on: {{ bridge.supporting_competency }})</p>
+                <p><strong>Saved evidence claim:</strong> {{ bridge.supporting_claim }}</p>
+                <p>{{ bridge.statement }}</p>
+            </div>
+            {% endfor %}
+            {% endif %}
+
             <label>Review notes:</label>
             <pre>{{ result.context_footer }}</pre>
 
@@ -106,7 +133,7 @@ HTML_TEMPLATE = """
 """
 
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request):
+def home(request: Request):
     stats = check_daily_limit()
     template = Template(HTML_TEMPLATE, autoescape=True)
     return HTMLResponse(content=template.render(stats=stats))
@@ -124,7 +151,6 @@ async def evaluate(company_name: str = Form(...), role_title: str = Form(...), j
         template = Template(HTML_TEMPLATE, autoescape=True)
         return HTMLResponse(content=template.render(stats=stats, message=f"❌ System Error: {str(e)}", company_name=company_name, role_title=role_title, job_url=job_url, jd_text=jd_text))
 
-    # Generate secure server-side evaluation token to prevent tampering
     eval_token = str(uuid.uuid4())
     PENDING_EVALUATIONS[eval_token] = {
         "company_name": company_name,
@@ -155,13 +181,11 @@ async def confirm_log(evaluation_token: str = Form(...)):
     stats = check_daily_limit()
     template = Template(HTML_TEMPLATE, autoescape=True)
 
-    # 1. Verify token exists in server memory (prevents payload tampering)
     if evaluation_token not in PENDING_EVALUATIONS:
         return HTMLResponse(content=template.render(stats=stats, message="🚫 Security Error: Invalid or expired evaluation token. Please re-evaluate."))
 
     eval_res = PENDING_EVALUATIONS.pop(evaluation_token)
 
-    # 2. Atomic Database Transaction (Strict Concurrency & Daily Cap Enforcement)
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     today_str = date.today().isoformat()
@@ -190,15 +214,68 @@ async def confirm_log(evaluation_token: str = Form(...)):
             eval_res["context_footer"]
         ))
         conn.commit()
-        success_msg = f"✅ Successfully logged securely! Remaining slots today: {9 - count}/10."
+
+        remaining_after = max(0, 9 - count)
+        success_msg = f"✅ Successfully logged securely! Remaining slots today: {remaining_after}/10."
     except Exception as e:
         conn.rollback()
         success_msg = f"❌ Database transaction failed: {str(e)}"
     finally:
-      conn.close()
+        conn.close()
 
     new_stats = check_daily_limit()
     return HTMLResponse(content=template.render(stats=new_stats, message=success_msg))
+
+
+# --- EVIDENCE DOSSIER ROUTES ---
+
+@app.get("/evidence", response_class=HTMLResponse)
+def get_evidence_dossier(request: Request):
+    error_messages = {
+        "invalid_claim": "Please check the claim fields and choose a supported status and confidentiality value.",
+        "save_failed": "The claim could not be saved. Confirm the local database has been initialized, then try again.",
+        "database_unavailable": "The evidence database is unavailable. Run database.py from the jobgs-engine folder first.",
+    }
+    error = error_messages.get(request.query_params.get("error"))
+    try:
+        claims = list_evidence_claims()
+    except sqlite3.Error:
+        claims = []
+        error = error_messages["database_unavailable"]
+
+    evidence_template = TEMPLATE_ENV.get_template("evidence.html")
+    return HTMLResponse(content=evidence_template.render(claims=claims, error=error))
+
+@app.post("/evidence/add", response_class=HTMLResponse)
+def post_evidence_claim(
+    competency: str = Form(...),
+    claim: str = Form(...),
+    context: str = Form(""),
+    evidence_summary: str = Form(...),
+    impact_metric: str = Form(""),
+    source_reference: str = Form(""),
+    evidence_status: str = Form("self_reported"),
+    confidentiality: str = Form("private"),
+    target_persona: str = Form("All"),
+):
+    try:
+        new_claim = EvidenceClaim(
+            competency=competency,
+            claim=claim,
+            context=context,
+            evidence_summary=evidence_summary,
+            impact_metric=impact_metric,
+            source_reference=source_reference,
+            evidence_status=evidence_status,
+            confidentiality=confidentiality,
+            target_persona=target_persona,
+        )
+        add_evidence_claim(new_claim)
+        return RedirectResponse(url="/evidence", status_code=303)
+    except ValidationError:
+        return RedirectResponse(url="/evidence?error=invalid_claim", status_code=303)
+    except (sqlite3.Error, ValueError):
+        return RedirectResponse(url="/evidence?error=save_failed", status_code=303)
 
 if __name__ == "__main__":
     import uvicorn

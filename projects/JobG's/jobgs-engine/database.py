@@ -7,6 +7,7 @@ DB_FILE = "jobgs_engine.db"
 def init_db():
     """Initialize SQLite database tables for Master Profile & Daily Target Tracking."""
     conn = sqlite3.connect(DB_FILE)
+    conn.execute("PRAGMA foreign_keys = ON")
     cursor = conn.cursor()
 
     # 1. Master Profile Table (Immutable Single Profile)
@@ -33,10 +34,30 @@ def init_db():
             company_name TEXT NOT NULL,
             role_title TEXT NOT NULL,
             job_url TEXT,
-            match_score REAL NOT NULL,
-            status TEXT DEFAULT 'PENDING_REVIEW', -- 'APPROVED', 'BLOCKED_BELOW_90', 'DISPATCHED'
+            match_score REAL NOT NULL, -- Legacy name; new rows store profile-term coverage here.
+            status TEXT DEFAULT 'USER_REVIEWED',
             context_footer TEXT,
             hrbp_contact TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # 3. Candidate-provided claims linked to concise evidence notes.
+    # Store references/notes, not confidential source documents themselves.
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS profile_evidence (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            profile_id INTEGER NOT NULL REFERENCES master_profile(id) ON DELETE CASCADE,
+            competency TEXT NOT NULL,
+            claim TEXT NOT NULL,
+            context TEXT NOT NULL DEFAULT '',
+            evidence_summary TEXT NOT NULL,
+            impact_metric TEXT NOT NULL DEFAULT '',
+            source_reference TEXT NOT NULL DEFAULT '',
+            evidence_status TEXT NOT NULL DEFAULT 'self_reported'
+                CHECK (evidence_status IN ('self_reported', 'reference_added', 'supporting_material_noted')),
+            confidentiality TEXT NOT NULL DEFAULT 'private'
+                CHECK (confidentiality IN ('public', 'private', 'confidential')),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')

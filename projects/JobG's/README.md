@@ -2,28 +2,29 @@
 
 Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of this project's original code and materials is not granted without separate written permission. See [LICENSE](LICENSE). Public GitHub availability does not automatically detect or prevent copying.
 
-**Version:** 1.0.0
+**Version:** 1.1.0 (personal, local MVP)
 
 **Status:** Local, single-user MVP
 
-JobG's is a local job-search workflow sandbox. It helps a candidate compare a manually supplied job description with a locally stored profile, review a match summary, and log approved opportunities. It is designed to make the review process deliberate and to track a daily limit of 10 logged entries.
+JobG's is a local, single-user job-search assistant. It helps a candidate review manually supplied job descriptions against a locally stored profile and track roles they choose to pursue. It is designed to make job-search decisions deliberate and to track a daily limit of 10 logged entries.
 
 ## Product context
 
 Version 1.0 establishes the first governed workflow:
 
 1. Enter a company, role, optional job URL, and job description.
-2. Compare the description with the candidate profile using transparent, rule-based keyword heuristics.
-3. Review the score, matched competencies, and generated context statement.
-4. Confirm and log an approved opportunity, subject to the daily cap.
+2. Compare the description with the candidate profile using transparent, rule-based keyword scanning.
+3. Review which profile skill terms are present and absent in the description.
+4. Decide whether to log the role yourself, subject to the daily cap.
 
-The candidate remains in control. JobG's does **not** search or scrape career sites, call an AI model, rewrite a resume, or submit applications to employers. The score is a prototype heuristic, not a calibrated probability or a prediction of ATS outcomes. Review each result and generated statement for accuracy before using it.
+The candidate remains in control. This release does **not** search career sites, call an AI model, rewrite a resume, or submit applications. Its profile-term scan reports only whether saved skill terms literally appear in a pasted JD; it does not evaluate skill depth, transferable experience, or interview likelihood. The evidence profile provides a structured place for candidate-authored claims and support notes, but does not independently verify them. See [EVIDENCE_PROFILE_GUIDE.md](EVIDENCE_PROFILE_GUIDE.md) for the claim structure and [MVP_BUILD_PLAN.md](MVP_BUILD_PLAN.md) for the learning path.
 
 ## Technology
 
 - Python 3.10 or newer
 - FastAPI for the local web application and form endpoints
 - Jinja2 for HTML rendering with autoescaping
+- Pydantic for validating structured evidence claims
 - SQLite for the local profile and application log
 - Uvicorn as the development server
 - GitHub Actions for automated syntax and unit checks on pull requests
@@ -36,7 +37,8 @@ JobG's/
 └── jobgs-engine/
     ├── app.py                 # FastAPI interface and review/confirm flow
     ├── database.py            # SQLite setup, sample profile, daily count
-    ├── matcher.py             # Rule-based job/profile matching
+    ├── matcher.py             # Explainable profile-term scan (1.1 baseline)
+    ├── evidence_profile.py    # Typed claim model and local evidence storage
     ├── requirements.txt       # Runtime dependencies
     ├── .gitignore             # Excludes local data and environment files
     └── tests/                 # Automated unit checks
@@ -68,7 +70,7 @@ From `jobgs-engine` with the virtual environment active:
 
 ```powershell
 python -m unittest discover -s tests -v
-python -m compileall -q app.py database.py matcher.py
+python -m compileall -q app.py database.py matcher.py evidence_profile.py
 ```
 
 GitHub Actions runs these checks for pull requests and pushes that change this project.
@@ -84,13 +86,13 @@ git commit -m "feat(jobgs): describe the change"
 git push -u origin feature/short-description
 ```
 
-After the v1.0 pull request is merged, create the release tag from `main`:
+After the 1.1 pull request is reviewed, merged into `main`, and CI passes, create the release tag from the updated `main`:
 
 ```powershell
 git switch main
 git pull
-git tag -a v1.0.0 -m "JobG's v1.0.0"
-git push origin v1.0.0
+git tag -a v1.1.0 -m "JobG's v1.1.0"
+git push origin v1.1.0
 ```
 
-See [CHANGELOG.md](CHANGELOG.md) for the v1.0 release notes and commit summary. Version 1.1 is planned for AI-assisted semantic matching and evidence-based resume draft suggestions, always subject to human review.
+See [CHANGELOG.md](CHANGELOG.md) for the release history and commit notes. AI-assisted semantic matching and evidence-linked resume draft suggestions are future work, subject to human review.

@@ -7,7 +7,7 @@ from datetime import date
 from database import DB_FILE, check_daily_limit
 from matcher import evaluate_job_match
 
-app = FastAPI(title="JobG's - Anti-ATS Personal Engine")
+app = FastAPI(title="JobG's - Personal Job Search Assistant")
 
 # In-memory secure state store for pending evaluations (Prevents tampering between review and logging)
 PENDING_EVALUATIONS = {}
@@ -41,20 +41,21 @@ HTML_TEMPLATE = """
 </head>
 <body>
     <div class="container">
-        <h1>🛡️ JobG's: Personal Anti-ATS Executive Engine</h1>
+        <h1>JobG's: Personal Job Search Assistant</h1>
+        <p>Local MVP: scan a pasted job description for terms already present in your profile, then review the result yourself.</p>
 
         <div class="stats-card">
             <div class="stat-item">
-                <div>Today's Applications</div>
+                <div>Today's Logged Roles</div>
                 <div class="stat-num">{{ stats.today_count }} / 10</div>
             </div>
             <div class="stat-item">
-                <div>Remaining Quota</div>
+                <div>Remaining Daily Slots</div>
                 <div class="stat-num">{{ stats.remaining_slots }}</div>
             </div>
             <div class="stat-item">
-                <div>Guardrail Status</div>
-                <div class="stat-num" style="color: #4ade80;">Active (90% + Autoescape)</div>
+                <div>Review Policy</div>
+                <div class="stat-num" style="color: #4ade80;">You decide</div>
             </div>
         </div>
 
@@ -71,31 +72,26 @@ HTML_TEMPLATE = """
             <label>Job Description (Paste JD text here):</label>
             <textarea name="jd_text" placeholder="Paste requirements here..." required>{{ jd_text | default('') }}</textarea>
 
-            <button type="submit">Evaluate 90% Match & Generate Context Packet</button>
+            <button type="submit">Scan profile evidence in this JD</button>
         </form>
 
         {% if result %}
         <div class="result-box">
             <h3>Evaluation Result</h3>
             <p><strong>Company:</strong> {{ result.company_name }} | <strong>Role:</strong> {{ result.role_title }}</p>
-            <p><strong>Calculated Match Score:</strong> {{ result.match_score }}%</p>
-            <p><strong>Status:</strong>
-                {% if result.is_approved %}
-                    <span class="success">{{ result.status }} (Approved)</span>
-                {% else %}
-                    <span class="blocked">{{ result.status }} (Blocked by 90% Guardrail)</span>
-                {% endif %}
-            </p>
+            <p><strong>Profile skill terms found in the JD:</strong> {{ result.profile_coverage }}% of the skills listed in your saved profile.</p>
+            <p>This is a literal keyword scan. It is not a job-fit score, a measure of your proficiency, or a prediction of hiring success.</p>
+            <p><strong>Found:</strong> {{ result.matched_competencies | join(', ') if result.matched_competencies else 'No listed skills found' }}</p>
+            <p><strong>Not mentioned:</strong> {{ result.missing_profile_skills | join(', ') if result.missing_profile_skills else 'All listed skills were mentioned' }}</p>
+            <p><strong>Profile domains explicitly mentioned:</strong> {{ result.matched_domains | join(', ') if result.matched_domains else 'None' }}</p>
 
-            <p><strong>Matched Competencies:</strong> {{ result.matched_competencies | join(', ') if result.matched_competencies else 'None' }}</p>
-
-            <label>Generated Contextual Resume Footer & Outreach Packet:</label>
+            <label>Review notes:</label>
             <pre>{{ result.context_footer }}</pre>
 
-            {% if result.is_approved and stats.can_apply %}
+            {% if stats.can_apply %}
             <form action="/confirm-log" method="post" style="margin-top: 15px;">
                 <input type="hidden" name="evaluation_token" value="{{ evaluation_token }}">
-                <button type="submit" style="background: #16a34a;">📝 Confirm & Log Entry</button>
+                <button type="submit" style="background: #16a34a;">I reviewed this role — log it</button>
             </form>
             {% endif %}
         </div>
@@ -134,10 +130,13 @@ async def evaluate(company_name: str = Form(...), role_title: str = Form(...), j
         "company_name": company_name,
         "role_title": role_title,
         "job_url": job_url,
-        "match_score": result["match_score"],
-        "is_approved": result["is_approved"],
+        "profile_coverage": result["profile_coverage"],
         "context_footer": result["context_footer"],
-        "matched_competencies": result.get("matched_competencies", [])
+        "matched_competencies": result.get("matched_competencies", []),
+        "missing_profile_skills": result.get("missing_profile_skills", []),
+        "matched_domains": result.get("matched_domains", []),
+        "status": result["status"],
+        "evaluation_method": result["evaluation_method"],
     }
 
     template = Template(HTML_TEMPLATE, autoescape=True)
@@ -161,9 +160,6 @@ async def confirm_log(evaluation_token: str = Form(...)):
         return HTMLResponse(content=template.render(stats=stats, message="🚫 Security Error: Invalid or expired evaluation token. Please re-evaluate."))
 
     eval_res = PENDING_EVALUATIONS.pop(evaluation_token)
-
-    if not eval_res.get("is_approved", False):
-        return HTMLResponse(content=template.render(stats=stats, message="🚫 Guardrail Error: Entry was not approved."))
 
     # 2. Atomic Database Transaction (Strict Concurrency & Daily Cap Enforcement)
     conn = sqlite3.connect(DB_FILE)
@@ -189,8 +185,8 @@ async def confirm_log(evaluation_token: str = Form(...)):
             eval_res["company_name"],
             eval_res["role_title"],
             eval_res["job_url"],
-            eval_res["match_score"],
-            "APPROVED",
+            eval_res["profile_coverage"],
+            "USER_REVIEWED",
             eval_res["context_footer"]
         ))
         conn.commit()

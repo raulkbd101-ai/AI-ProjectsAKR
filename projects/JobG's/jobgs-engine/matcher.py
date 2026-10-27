@@ -1,112 +1,104 @@
-import sqlite3
 import json
+import re
+import sqlite3
 from datetime import date
+from contextlib import closing
+
 from database import DB_FILE, check_daily_limit
 
+
 def evaluate_job_match(role_title: str, company_name: str, jd_text: str):
+    """Find profile terms explicitly mentioned in a job description.
+
+    This is a transparent lexical baseline, not an AI judgment or a measure
+    of the candidate's probability of getting an interview.
     """
-    Evaluates a Job Description against the Master Profile using
-    proportional tech stack matching and domain alignment.
-    """
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT full_name, years_experience, core_domains, core_tech_stack FROM master_profile LIMIT 1")
-    profile = cursor.fetchone()
-    conn.close()
+    with closing(sqlite3.connect(DB_FILE)) as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT full_name, years_experience, core_domains, core_tech_stack "
+            "FROM master_profile LIMIT 1"
+        )
+        profile = cursor.fetchone()
 
     if not profile:
         return {"error": "Master profile not found. Run database.py first."}
 
     name, exp_years, domains_json, tech_json = profile
-    domains = json.loads(domains_json)
-    tech_stack = json.loads(tech_json)
+    domains = json.loads(domains_json or "[]")
+    tech_stack = json.loads(tech_json or "{}")
+    jd_lower = jd_text.casefold()
 
-    jd_lower = jd_text.lower()
+    def phrase_present(phrase: str) -> bool:
+        # Match whole terms so, for example, "R" does not match "manager".
+        escaped = re.escape(phrase.strip())
+        return bool(escaped) and re.search(rf"(?<!\w){escaped}(?!\w)", jd_lower, re.IGNORECASE) is not None
 
-    # 1. Proportional Tech Stack Overlap
-    # Flatten all profile tech items
-    all_profile_tech = []
-    for category, items in tech_stack.items():
-        all_profile_tech.extend(items)
+    profile_skills = list(dict.fromkeys(
+        skill
+        for items in tech_stack.values()
+        if isinstance(items, list)
+        for skill in items
+        if isinstance(skill, str) and skill.strip()
+    ))
+    matched_skills = [skill for skill in profile_skills if phrase_present(skill)]
+    missing_skills = [skill for skill in profile_skills if skill not in matched_skills]
+    matched_domains = [domain for domain in domains if isinstance(domain, str) and phrase_present(domain)]
 
-    matched_tech_items = [item for item in all_profile_tech if item.lower() in jd_lower]
-
-    # Extract tech items mentioned in the JD that belong to your profile scope
-    # If the JD mentions key profile items, reward proportionally
-    if matched_tech_items:
-        # Give high score if core profile tech is found in the JD
-        tech_score = min(50.0, (len(matched_tech_items) / max(3, len(matched_tech_items))) * 50.0)
-        # Boost if critical core stack items (Python, Snowflake, GCP, Tableau) match
-        if any(core in matched_tech_items for core in ["Python", "Snowflake", "GCP", "Tableau"]):
-            tech_score = max(45.0, tech_score)
-    else:
-    # Fallback base score if no explicit keyword matches but architectural terms exist
-        tech_score = 30.0
-
-    # 2. Domain & Leadership Alignment (weight: 30%)
-    domain_matches = sum(1 for d in domains if any(word.lower() in jd_lower for word in d.split() if len(word) > 2))
-    domain_score = min(30.0, max(15.0, domain_matches * 10.0))
-
-    # 3. Seniority & Experience Weight (weight: 20%)
-    seniority_score = 20.0 if any(term in jd_lower for term in ["10+", "15+", "senior", "principal", "head", "lead", "manager", "architect"]) else 10.0
-
-    # Total Score Calculation
-    total_score = round(tech_score + domain_score + seniority_score, 2)
-    match_score = min(98.0, max(50.0, total_score))
-
-    # Strict 90% Guardrail Check
-    is_approved = match_score >= 90.0
-    status = "APPROVED_FOR_DISPATCH" if is_approved else "BLOCKED_BELOW_90_THRESHOLD"
-
-    # Contextual Stack Adaptation Footer
-    context_footer = f"""
----
-[CANDIDATE ADAPTATION & CORE TRANSFERABILITY STATEMENT]
-Candidate: {name} ({exp_years}+ Years Experience)
-Target Role: {role_title} at {company_name}
-Evaluated Overlap: Matched core competencies include {', '.join(matched_tech_items) if matched_tech_items else 'Enterprise Architecture & Delivery'}.
-Systemic Note: Core engineering principles and distributed platform leadership are fully proven.
-Any specific ancillary tool or framework variant not explicitly listed in the primary stack will be systematically mastered within 30 days.
-Calculated Match Score: {match_score}% (Derived from verified tech stack overlap and domain alignment).
-"""
+    # This measures only how many known profile terms appear in the JD.
+    # It is deliberately not called a job-fit or success-probability score.
+    coverage = round(100 * len(matched_skills) / len(profile_skills), 1) if profile_skills else 0.0
+    context_summary = (
+        f"Profile evidence found in JD: {', '.join(matched_skills) if matched_skills else 'No listed technical skills found'}.\n"
+        f"Profile skills not mentioned in JD: {', '.join(missing_skills) if missing_skills else 'None'}.\n"
+        f"Profile domains explicitly mentioned: {', '.join(matched_domains) if matched_domains else 'None'}.\n"
+        "This keyword scan does not assess skill depth, transferable experience, or hiring likelihood. "
+        "Review the JD and your evidence before deciding whether to apply."
+    )
 
     return {
         "company_name": company_name,
         "role_title": role_title,
-        "match_score": match_score,
-        "status": status,
-        "is_approved": is_approved,
-        "matched_competencies": matched_tech_items,
-        "context_footer": context_footer.strip()
+        "profile_coverage": coverage,
+        "status": "HUMAN_REVIEW_REQUIRED",
+        "matched_competencies": matched_skills,
+        "missing_profile_skills": missing_skills,
+        "matched_domains": matched_domains,
+        "context_footer": context_summary,
+        "candidate_name": name,
+        "years_experience": exp_years,
+        "evaluation_method": "profile_term_scan",
     }
 
+
 def record_application(eval_result, job_url=""):
-    """Record an approved evaluation in the daily application log."""
-    from database import check_daily_limit
+    """Log a role the user has chosen to review, subject to the daily cap."""
     daily_status = check_daily_limit()
-
     if not daily_status["can_apply"]:
-        return {"success": False, "message": "❌ Daily limit of 10 applications reached."}
+        return {"success": False, "message": "❌ Daily limit of 10 logged roles reached."}
 
-    if not eval_result["is_approved"]:
-        return {"success": False, "message": f"🚫 Blocked by 90% Guardrail (Score: {eval_result['match_score']}%)."}
+    if "error" in eval_result:
+        return {"success": False, "message": eval_result["error"]}
 
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    today_str = date.today().isoformat()
+    with closing(sqlite3.connect(DB_FILE)) as conn:
+        with conn:
+            conn.execute(
+                """INSERT INTO daily_applications
+                   (apply_date, company_name, role_title, job_url, match_score, status, context_footer)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    date.today().isoformat(),
+                    eval_result["company_name"],
+                    eval_result["role_title"],
+                    job_url,
+                    eval_result["profile_coverage"],
+                    "USER_REVIEWED",
+                    eval_result["context_footer"],
+                ),
+            )
 
-    cursor.execute('''
-        INSERT INTO daily_applications (apply_date, company_name, role_title, job_url, match_score, status, context_footer)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        today_str,
-        eval_result["company_name"],
-        eval_result["role_title"],
-        job_url,
-        eval_result["match_score"],
-        "APPROVED",
-        eval_result["context_footer"]
-    ))
-    conn.commit()
-    conn.close()
-    return {"success": True, "message": "✅ Successfully logged."}
+    new_status = check_daily_limit()
+    return {
+        "success": True,
+        "message": f"✅ Role logged for your review. Remaining daily slots: {new_status['remaining_slots']}/10.",
+    }

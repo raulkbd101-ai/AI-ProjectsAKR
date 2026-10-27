@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobG's - Evidence Dossier</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 2rem; }
+        .container { max-width: 950px; margin: 0 auto; }
+        .card { background: #1e293b; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #334155; }
+        h1, h2 { color: #38bdf8; }
+        label { display: block; margin-top: 1rem; font-weight: bold; color: #94a3b8; font-size: 0.9rem; }
+        input, select, textarea { width: 100%; padding: 0.6rem; margin-top: 0.3rem; background: #0f172a; border: 1px solid #475569; color: #fff; border-radius: 4px; box-sizing: border-box; }
+        button { background: #0284c7; color: white; border: none; padding: 0.75rem 1.5rem; margin-top: 1.2rem; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+        button:hover { background: #0369a1; }
+        .nav-links { display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav-links a { display: inline-block; padding: 10px 14px; border-radius: 6px; background: #334155; color: #f8fafc; text-decoration: none; font-weight: bold; }
+        .nav-links a[aria-current="page"] { background: #0284c7; }
+        .nav-links a:hover { background: #0369a1; }
+        .evidence-item { background: #0f172a; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; border-left: 4px solid #38bdf8; }
+        .badge { background: #334155; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; color: #38bdf8; display: inline-block; margin-right: 0.3rem; }
+        .metric { color: #4ade80; font-weight: bold; margin-top: 0.5rem; font-size: 0.9rem; }
+        .error-banner { background: #7f1d1d; border: 1px solid #f87171; color: #fca5a5; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } body { padding: 1rem; } }
+    </style>
+</head>
+<body>
+<main class="container">
+    <nav class="nav-links" aria-label="Main navigation">
+        <a href="/">Dashboard</a>
+        <a href="/evidence" aria-current="page">Evidence Dossier</a>
+    </nav>
+
+    <h1>🛡️ JobG's: Evidence-Backed Profile Dossier</h1>
+
+    {% if error %}
+        <div class="error-banner" role="alert"><strong>Notice:</strong> {{ error }}</div>
+    {% endif %}
+
+    <section class="card" aria-labelledby="add-claim-heading">
+        <h2 id="add-claim-heading">Add Grounded Executive Claim</h2>
+        <p>Only enter accurate claims and notes you can support. Evidence labels are self-reported, not independently verified. Confidentiality labels are descriptive only: this local app has no login and its SQLite file is not encrypted. Do not store secrets, confidential source documents, or other people's personal data here.</p>
+        <form action="/evidence/add" method="POST">
+            <div class="grid">
+                <div>
+                    <label for="target_persona">Target Resume Persona:</label>
+                    <select id="target_persona" name="target_persona" required>
+                        <option value="All">All personas</option>
+                        <option value="Director">Director</option>
+                        <option value="Architect">Architect</option>
+                        <option value="TPM">TPM</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="competency">Competency / Domain:</label>
+                    <input type="text" id="competency" name="competency" placeholder="[capability or domain]" required minlength="2" maxlength="120">
+                </div>
+                <div>
+                    <label for="impact_metric">Impact Metric (optional):</label>
+                    <input type="text" id="impact_metric" name="impact_metric" placeholder="[measured result and unit, if supported]" maxlength="300">
+                </div>
+            </div>
+
+            <label for="claim">Claim Statement:</label>
+            <input type="text" id="claim" name="claim" placeholder="I [action] [scope or outcome]." required minlength="8" maxlength="600">
+
+            <label for="context">Context &amp; Role Details (optional):</label>
+            <textarea id="context" name="context" rows="2" placeholder="[project or role and approximate dates; omit confidential details]" maxlength="300"></textarea>
+
+            <label for="evidence_summary">Evidence Summary &amp; Supporting Notes:</label>
+            <textarea id="evidence_summary" name="evidence_summary" rows="3" placeholder="[what could help you substantiate this claim]" required minlength="8" maxlength="1000"></textarea>
+
+            <div class="grid">
+                <div>
+                    <label for="source_reference">Source Reference (optional):</label>
+                    <input type="text" id="source_reference" name="source_reference" placeholder="[private reminder; do not paste a document]" maxlength="300">
+                </div>
+                <div>
+                    <label for="evidence_status">Evidence Status:</label>
+                    <select id="evidence_status" name="evidence_status">
+                        <option value="self_reported">Self Reported</option>
+                        <option value="reference_added">Reference Added</option>
+                        <option value="supporting_material_noted">Supporting Material Noted</option>
+                    </select>
+                </div>
+            </div>
+
+            <label for="confidentiality">Confidentiality Level:</label>
+            <select id="confidentiality" name="confidentiality">
+                <option value="private">Private</option>
+                <option value="public">Public</option>
+                <option value="confidential">Confidential</option>
+            </select>
+            <button type="submit">Save Evidence Claim</button>
+        </form>
+    </section>
+
+    <section class="card" aria-labelledby="saved-claims-heading">
+        <h2 id="saved-claims-heading">Saved Profile Evidence Claims ({{ claims|length }})</h2>
+        {% if not claims %}
+            <p style="color: #94a3b8;">No evidence claims recorded yet. Add your first executive claim above.</p>
+        {% endif %}
+        {% for c in claims %}
+            <article class="evidence-item">
+                <div>
+                    <span class="badge">{{ c.competency }}</span>
+                    <span class="badge">Status: {{ c.evidence_status }}</span>
+                    <span class="badge">Persona: {{ c.target_persona }}</span>
+                    <span class="badge">Confidentiality: {{ c.confidentiality }}</span>
+                </div>
+                <h3>{{ c.claim }}</h3>
+                {% if c.context %}<p><strong>Context:</strong> {{ c.context }}</p>{% endif %}
+                <p>{{ c.evidence_summary }}</p>
+                {% if c.impact_metric %}<p class="metric">Impact: {{ c.impact_metric }}</p>{% endif %}
+                {% if c.source_reference %}<p><small>Source reference: {{ c.source_reference }}</small></p>{% endif %}
+            </article>
+        {% endfor %}
+    </section>
+</main>
+</body>
+</html>

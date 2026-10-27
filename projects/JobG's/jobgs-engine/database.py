@@ -43,7 +43,6 @@ def init_db():
     ''')
 
     # 3. Candidate-provided claims linked to concise evidence notes.
-    # Store references/notes, not confidential source documents themselves.
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS profile_evidence (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,6 +53,8 @@ def init_db():
             evidence_summary TEXT NOT NULL,
             impact_metric TEXT NOT NULL DEFAULT '',
             source_reference TEXT NOT NULL DEFAULT '',
+            target_persona TEXT NOT NULL DEFAULT 'All'
+                CHECK (target_persona IN ('All', 'Director', 'Architect', 'TPM')),
             evidence_status TEXT NOT NULL DEFAULT 'self_reported'
                 CHECK (evidence_status IN ('self_reported', 'reference_added', 'supporting_material_noted')),
             confidentiality TEXT NOT NULL DEFAULT 'private'
@@ -61,6 +62,59 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+    # Add the persona field to existing local databases without discarding claims.
+    evidence_columns = {
+        row[1] for row in cursor.execute("PRAGMA table_info(profile_evidence)").fetchall()
+    }
+    if "target_persona" not in evidence_columns:
+        cursor.execute('''
+            ALTER TABLE profile_evidence
+            ADD COLUMN target_persona TEXT NOT NULL DEFAULT 'All'
+                CHECK (target_persona IN ('All', 'Director', 'Architect', 'TPM'))
+        ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS transferable_tech_mapping (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            target_technology TEXT NOT NULL,
+            source_technology TEXT NOT NULL,
+            relationship TEXT NOT NULL,
+            bridge_template TEXT NOT NULL,
+            target_persona TEXT NOT NULL DEFAULT 'All'
+                CHECK (target_persona IN ('All', 'Director', 'Architect', 'TPM')),
+            review_status TEXT NOT NULL DEFAULT 'suggested'
+                CHECK (review_status IN ('suggested', 'approved', 'rejected')),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (target_technology, source_technology, target_persona)
+        )
+    ''')
+
+    # These are reviewable adjacency suggestions, not declarations of candidate skill.
+    cursor.executemany(
+        """INSERT OR IGNORE INTO transferable_tech_mapping
+           (target_technology, source_technology, relationship, bridge_template,
+            target_persona, review_status)
+           VALUES (?, ?, ?, ?, 'All', 'suggested')""",
+        [
+            ("Snowflake", "BigQuery", "cloud data warehouse concepts",
+             "The recorded {source} evidence may offer concepts relevant to {target}; review whether the claim's scope supports that comparison. It does not establish hands-on {target} use."),
+            ("AWS", "GCP", "cloud architecture concepts",
+             "The recorded {source} evidence may offer concepts relevant to {target}; review whether the claim's scope supports that comparison. It does not establish hands-on {target} use."),
+            ("AWS", "Azure", "cloud architecture concepts",
+             "The recorded {source} evidence may offer concepts relevant to {target}; review whether the claim's scope supports that comparison. It does not establish hands-on {target} use."),
+            ("Redshift", "BigQuery", "cloud data warehouse concepts",
+             "The recorded {source} evidence may offer concepts relevant to {target}; review whether the claim's scope supports that comparison. It does not establish hands-on {target} use."),
+            ("Azure", "GCP", "cloud architecture concepts",
+             "The recorded {source} evidence may offer concepts relevant to {target}; review whether the claim's scope supports that comparison. It does not establish hands-on {target} use."),
+            ("Azure", "AWS", "cloud architecture concepts",
+             "The recorded {source} evidence may offer concepts relevant to {target}; review whether the claim's scope supports that comparison. It does not establish hands-on {target} use."),
+            ("GCP", "AWS", "cloud architecture concepts",
+             "The recorded {source} evidence may offer concepts relevant to {target}; review whether the claim's scope supports that comparison. It does not establish hands-on {target} use."),
+            ("GCP", "Azure", "cloud architecture concepts",
+             "The recorded {source} evidence may offer concepts relevant to {target}; review whether the claim's scope supports that comparison. It does not establish hands-on {target} use."),
+        ],
+    )
 
     conn.commit()
     conn.close()
@@ -84,9 +138,14 @@ def seed_master_profile():
             "Your City",
             60,
             0.0,
-            "", # Add a video pitch URL only in your local profile if desired.
-            json.dumps(["Enterprise Cloud Transformation", "BI Platform Modernization", "AI Proofs of Concept", "Global Team Leadership"]),
-            json.dumps({"database": ["Relational", "NoSQL", "Snowflake"], "cloud": ["GCP", "AWS"], "analytics": ["Tableau", "Looker"], "core": ["C++", "Python", "Cloud Architecture"]})
+            "",
+            json.dumps([]),
+            json.dumps({
+                "database": [],
+                "cloud": ["GCP", "AWS", "Azure"],
+                "analytics": [],
+                "core": ["Multi-cloud Architecture", "Cloud Transformation", "Data Engineering"],
+            })
         ))
         conn.commit()
         print("✅ Master Profile seeded successfully.")
@@ -94,6 +153,93 @@ def seed_master_profile():
         print("ℹ️ Master Profile already exists.")
 
     conn.close()
+    seed_multicloud_profile()
+
+
+MULTICLOUD_PROFILE_CLAIMS = (
+    {
+        "competency": "Multi-cloud architecture",
+        "claim": "I have 6+ years of hands-on architecture experience across GCP, AWS, and Azure in executive platform transformation roles.",
+        "context": "Executive platform transformation roles; add specific projects and dates when appropriate.",
+        "evidence_summary": "Candidate-reported experience statement. Add non-confidential project examples and supporting references before reusing this claim in application materials.",
+        "impact_metric": "6+ years (candidate reported)",
+    },
+    {
+        "competency": "Multi-cloud transformation",
+        "claim": "My hands-on platform transformation work spans GCP, AWS, and Azure.",
+        "context": "Executive platform transformation roles; add specific platform scope and outcomes when appropriate.",
+        "evidence_summary": "Candidate-reported experience statement. Add non-confidential project examples and supporting references before reusing this claim in application materials.",
+        "impact_metric": "",
+    },
+    {
+        "competency": "Multi-cloud data engineering",
+        "claim": "My hands-on data engineering experience spans services and platforms across GCP, AWS, and Azure.",
+        "context": "Add the specific data platforms, services, and role context before using this claim in a resume.",
+        "evidence_summary": "Candidate-reported foundational claim. Specific tools, project examples, and supporting references have not yet been recorded.",
+        "impact_metric": "",
+    },
+)
+
+
+def seed_multicloud_profile():
+    """Idempotently add the candidate-reported multi-cloud stack and evidence claims."""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    profile = cursor.execute(
+        "SELECT id, core_tech_stack FROM master_profile ORDER BY id LIMIT 1"
+    ).fetchone()
+    if profile is None:
+        conn.close()
+        raise ValueError("Master profile not found. Run seed_master_profile() first.")
+
+    profile_id, stack_json = profile
+    tech_stack = json.loads(stack_json or "{}")
+    if not isinstance(tech_stack, dict):
+        tech_stack = {}
+    for category, values in {
+        "cloud": ["GCP", "AWS", "Azure"],
+        "core": ["Multi-cloud Architecture", "Cloud Transformation", "Data Engineering"],
+    }.items():
+        existing = tech_stack.get(category)
+        existing = existing if isinstance(existing, list) else []
+        tech_stack[category] = list(dict.fromkeys(
+            [item for item in existing if isinstance(item, str)] + values
+        ))
+
+    cursor.execute(
+        "UPDATE master_profile SET core_tech_stack = ? WHERE id = ?",
+        (json.dumps(tech_stack), profile_id),
+    )
+
+    for claim in MULTICLOUD_PROFILE_CLAIMS:
+        existing = cursor.execute(
+            """SELECT 1 FROM profile_evidence
+               WHERE profile_id = ? AND competency = ? AND claim = ? AND target_persona = 'All'
+               LIMIT 1""",
+            (profile_id, claim["competency"], claim["claim"]),
+        ).fetchone()
+        if existing:
+            continue
+        cursor.execute(
+            """INSERT INTO profile_evidence (
+                   profile_id, competency, claim, context, evidence_summary,
+                   impact_metric, source_reference, target_persona,
+                   evidence_status, confidentiality
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, 'All', 'self_reported', 'private')""",
+            (
+                profile_id,
+                claim["competency"],
+                claim["claim"],
+                claim["context"],
+                claim["evidence_summary"],
+                claim["impact_metric"],
+                "Candidate-provided JobG's profile update (2026-10-27)",
+            ),
+        )
+
+    conn.commit()
+    conn.close()
+    print("✅ Multi-cloud profile stack and self-reported evidence seeded.")
 
 def check_daily_limit():
     """Check how many target applications have been processed today (Max 10)."""

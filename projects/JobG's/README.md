@@ -39,6 +39,8 @@ JobG's/
     ├── database.py            # SQLite setup, sample profile, daily count
     ├── matcher.py             # Explainable profile-term scan (1.1 baseline)
     ├── evidence_profile.py    # Typed claim model and local evidence storage
+    ├── templates/
+    │   └── evidence.html      # Evidence dossier page and navigation
     ├── requirements.txt       # Runtime dependencies
     ├── .gitignore             # Excludes local data and environment files
     └── tests/                 # Automated unit checks
@@ -96,3 +98,5 @@ git push origin v1.1.0
 ```
 
 See [CHANGELOG.md](CHANGELOG.md) for the release history and commit notes. AI-assisted semantic matching and evidence-linked resume draft suggestions are future work, subject to human review.
+
+For the longer learning and delivery plan, see the [24-week AI engineering roadmap](AI_UPSKILLING_ROADMAP.md), including the first four weeks on local retrieval, vector search, and evidence-grounded RAG.

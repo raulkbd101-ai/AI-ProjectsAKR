@@ -1,8 +1,44 @@
 # Changelog
 
-All notable JobG's changes are recorded here. Existing tags are preserved as published; planned releases use Semantic Versioning.
+All notable JobG's changes are recorded here. Published tags are preserved; release notes identify the commit each release represents.
 
-## [Unreleased] — proposed v1.3.0
+## [Unreleased]
+
+No release scope has been committed for the next version. Weeks 3–4 items remain planned.
+
+## [1.4.1] — Week 2 job intake and human-governed triage
+
+Corrective release tag for the PR #9 merge. The pre-existing v1.4 tag was not moved; it points to an earlier commit and does not represent the Week 2 merge. Tag v1.4.1 points to merge commit a04bcbc2434c8fe95c9e319086fc012c5b6804ff.
+
+### Added
+
+- SQLite companies_inventory records for lightweight company metadata and application_tracker records for manually supplied job discoveries.
+- Additive database initialization that creates or upgrades the Week 2 tables without replacing existing inventory rows.
+- POST /api/triage-job for rule-based persona, domain, and location suggestions, local evidence retrieval, technology bridge drafts, and outreach drafts without saving a tracker row.
+- POST /api/add-job for the same review workflow with a SQLite DISCOVERED record; duplicate job URLs are rejected as conflicts.
+- POST /api/ingest-companies for validated, bounded company batches.
+- Job Copilot integration with local hybrid retrieval using Ollama nomic-embed-text. Managed job triage requires hybrid retrieval and reports service failure rather than representing fallback as successful hybrid matching.
+- Optional Windows PowerShell session wrapper for a managed Ollama query, including process and port cleanup checks.
+
+### Governance and limitations
+
+- Job inputs are supplied manually. This release does not scrape job boards or career sites.
+- Persona, domain, and location outputs are rule-based suggestions, not definitive classification or job-fit decisions.
+- Retrieval scores measure evidence relevance only; they do not measure candidate qualification, claim truth, or hiring probability.
+- Bridge statements and LinkedIn outreach are drafts for human review. No application or message is submitted or sent automatically.
+- This is a rule-based co-pilot, not a multi-agent autonomous system. Local SQLite data is not encrypted by the application.
+
+### Verification
+
+- PR #9 merged to main on 2026-10-28.
+- All five checks on merge commit a04bcbc passed: build, Python 3.12 checks, Python 3.14 checks, deploy workflow, and report-build-status.
+- Earlier retrieval and evidence test results are recorded in the v1.3.0 section below.
+
+### Commit note
+
+Suggested commit message: feat(v1.4): add human-governed job triage workflow
+
+## [1.3.0] — local hybrid evidence retrieval
 
 ### Added
 
@@ -14,11 +50,11 @@ All notable JobG's changes are recorded here. Existing tags are preserved as pub
 
 ### Scope and limitations
 
-- The retrieval prototype is a CLI module and is not integrated into the FastAPI dashboard.
+- At the v1.3.0 milestone, retrieval was a CLI module and was not integrated into the FastAPI dashboard. Week 2 later added managed retrieval to job intake.
 - It does not generate a RAG narrative, assess job fit, rewrite resumes, scrape job boards, or submit applications.
 - Ollama model files must be downloaded once. Runtime embedding requests use the local loopback service; no hosted inference API is configured.
 - Retrieval scores indicate evidence-search relevance only, not claim truth, candidate proficiency, hiring likelihood, or job fit.
-- `v1.2` remains an existing tag for the evidence dossier and persona-aware transferable bridge foundation. Do not move or overwrite that tag.
+- The v1.2 tag remains the evidence dossier and persona-aware transferable bridge milestone. Existing tags are preserved.
 
 ### Verification
 

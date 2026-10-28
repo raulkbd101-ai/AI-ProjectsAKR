@@ -1,21 +1,24 @@
 from pathlib import Path
+import json
 import sqlite3
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Annotated
 
 from fastapi import Body, FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 from pydantic import ValidationError
 
-from database import DB_FILE, check_daily_limit
+from database import DB_FILE, get_dashboard_analytics
 from matcher import evaluate_job_match
 from evidence import list_evidence_claims, add_evidence_claim, EvidenceClaim
 from job_copilot import JobSubmission, ManagedRagError, add_job, triage_job
 from ingest_companies import CompanyRecord, ingest_company_records
+from tracker import router as tracker_router
 
 app = FastAPI(title="JobG's - Personal Job Search Assistant")
+app.include_router(tracker_router)
 TEMPLATE_ENV = Environment(
     loader=FileSystemLoader(Path(__file__).resolve().parent / "templates"),
     autoescape=select_autoescape(("html", "xml")),
@@ -53,12 +56,21 @@ HTML_TEMPLATE = """
         .nav-links a { display: inline-block; padding: 10px 14px; border-radius: 6px; background: #334155; color: #f8fafc; text-decoration: none; font-weight: bold; }
         .nav-links a[aria-current="page"] { background: #0284c7; }
         .nav-links a:hover { background: #0369a1; }
+        .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
+        .metric-card { background: #334155; border: 1px solid #475569; border-radius: 8px; padding: 14px; }
+        .metric-label { color: #cbd5e1; font-size: 13px; }
+        .metric-value { color: #38bdf8; font-size: 23px; font-weight: 700; }
+        .progress-track { height: 12px; overflow: hidden; border-radius: 999px; background: #0f172a; border: 1px solid #475569; }
+        .progress-fill { height: 100%; background: #38bdf8; }
+        @media (max-width: 650px) { .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 420px) { .metric-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
     <div class="container">
         <nav class="nav-links" aria-label="Main navigation">
             <a href="/" aria-current="page">Dashboard</a>
+            <a href="/tracker">Application Tracker</a>
             <a href="/evidence">Evidence Dossier</a>
         </nav>
         <h1>JobG's: Personal Job Search Assistant</h1>
@@ -78,6 +90,24 @@ HTML_TEMPLATE = """
                 <div class="stat-num" style="color: #4ade80;">You decide</div>
             </div>
         </div>
+
+        <section class="result-box" aria-labelledby="activity-heading">
+            <h2 id="activity-heading">Activity &amp; Daily Cap</h2>
+            <div class="metric-grid">
+                <div class="metric-card"><div class="metric-label">Roles logged today</div><div class="metric-value">{{ stats.today_count }} / {{ stats.daily_cap }}</div></div>
+                <div class="metric-card"><div class="metric-label">Daily slots remaining</div><div class="metric-value">{{ stats.remaining_slots }}</div></div>
+                <div class="metric-card"><div class="metric-label">Total tracked roles</div><div class="metric-value">{{ stats.total_tracked_roles }}</div></div>
+                <div class="metric-card"><div class="metric-label">Active outreach drafts</div><div class="metric-value">{{ stats.active_outreach_drafts }}</div></div>
+                <div class="metric-card"><div class="metric-label">Applied</div><div class="metric-value">{{ stats.status_breakdown.applied }}</div></div>
+                <div class="metric-card"><div class="metric-label">Interviewing</div><div class="metric-value">{{ stats.status_breakdown.interviewing }}</div></div>
+            </div>
+            <p class="metric-label">Daily cap usage: {{ stats.daily_progress_percent }}%</p>
+            <div class="progress-track" role="progressbar" aria-label="Roles logged toward today's cap" aria-valuemin="0" aria-valuemax="{{ stats.daily_cap }}" aria-valuenow="{{ stats.today_count }}">
+                <div class="progress-fill" style="width: {{ stats.daily_progress_percent }}%;"></div>
+            </div>
+            <p class="metric-label">Current status snapshot — Discovered: {{ stats.status_breakdown.discovered }} · Reviewed: {{ stats.status_breakdown.reviewed }} · Applied: {{ stats.status_breakdown.applied }} · Interview: {{ stats.status_breakdown.interviewing }} · Offers: {{ stats.status_breakdown.offers }} · Closed: {{ stats.status_breakdown.closed }}</p>
+            <p class="metric-label">Snapshot ratios (not historical funnel conversion): Applied / tracked {{ stats.applied_share_percent }}% · Interview / applied {{ stats.interview_to_applied_percent }}% · Offer / applied {{ stats.offer_to_applied_percent }}%.</p>
+        </section>
 
         <form action="/evaluate" method="post">
             <label>Company Name:</label>
@@ -139,13 +169,13 @@ HTML_TEMPLATE = """
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    stats = check_daily_limit()
+    stats = get_dashboard_analytics()
     template = Template(HTML_TEMPLATE, autoescape=True)
     return HTMLResponse(content=template.render(stats=stats))
 
 @app.post("/evaluate", response_class=HTMLResponse)
 async def evaluate(company_name: str = Form(...), role_title: str = Form(...), job_url: str = Form(""), jd_text: str = Form(...)):
-    stats = check_daily_limit()
+    stats = get_dashboard_analytics()
 
     try:
         result = evaluate_job_match(role_title, company_name, jd_text)
@@ -183,7 +213,7 @@ async def evaluate(company_name: str = Form(...), role_title: str = Form(...), j
 
 @app.post("/confirm-log", response_class=HTMLResponse)
 async def confirm_log(evaluation_token: str = Form(...)):
-    stats = check_daily_limit()
+    stats = get_dashboard_analytics()
     template = Template(HTML_TEMPLATE, autoescape=True)
 
     if evaluation_token not in PENDING_EVALUATIONS:
@@ -228,7 +258,7 @@ async def confirm_log(evaluation_token: str = Form(...)):
     finally:
         conn.close()
 
-    new_stats = check_daily_limit()
+    new_stats = get_dashboard_analytics()
     return HTMLResponse(content=template.render(stats=new_stats, message=success_msg))
 
 

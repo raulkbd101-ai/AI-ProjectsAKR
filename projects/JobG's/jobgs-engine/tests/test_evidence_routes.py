@@ -57,7 +57,10 @@ class EvidenceRouteTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'href="/evidence"', response.body)
+        self.assertIn(b'href="/tracker"', response.body)
         self.assertIn(b"Evidence Dossier", response.body)
+        self.assertIn(b"Daily cap usage", response.body)
+        self.assertIn(b"Total tracked roles", response.body)
 
     def test_valid_claim_post_saves_and_redirects(self):
         response = app.post_evidence_claim(

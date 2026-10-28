@@ -308,6 +308,8 @@ def triage_job(job: JobSubmission) -> dict:
         "company_name": job.company_name,
         "role_title": job.role_title,
         "job_url": job.job_url,
+        # Literal profile-term coverage is distinct from semantic retrieval relevance.
+        "profile_coverage": lexical_evaluation.get("profile_coverage"),
         "triage": {
             **persona,
             "domain_tags": domains,
@@ -407,8 +409,8 @@ def add_job(job: JobSubmission) -> dict:
                    (company_id, company_name, role_title, job_url, location,
                     work_model, raw_description, assigned_persona, domain_tags_json,
                     triage_json, rag_results_json, transferable_bridges_json,
-                    outreach_draft, status, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'DISCOVERED', ?, ?)""",
+                    outreach_draft, profile_coverage, status, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'DISCOVERED', ?, ?)""",
             (
                 company["id"], job.company_name, job.role_title, job.job_url,
                 job.location, triage["location"]["work_model"], job.raw_description,
@@ -416,7 +418,7 @@ def add_job(job: JobSubmission) -> dict:
                 json.dumps(triage, ensure_ascii=False),
                 json.dumps(result["evidence_retrieval"], ensure_ascii=False),
                 json.dumps(result["transferable_bridges"], ensure_ascii=False),
-                result["outreach_draft"], now, now,
+                result["outreach_draft"], result.get("profile_coverage"), now, now,
             ),
         )
 

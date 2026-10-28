@@ -55,6 +55,43 @@ class RagMatcherTests(unittest.TestCase):
             )
             return cursor.lastrowid
 
+    def test_persona_switch_changes_top_evidence_without_changing_base_score(self):
+        evidence = [
+            {
+                "evidence_id": 1,
+                "competency": "Global team leadership and budget management",
+                "claim": "Led organizational transformation across a global team.",
+                "target_persona": "All",
+                "retrieval_score": 0.5,
+                "lexical_score": 0.5,
+            },
+            {
+                "evidence_id": 2,
+                "competency": "Multi-cloud architecture and scalability",
+                "claim": "Designed cloud migration and scalable system architecture.",
+                "target_persona": "All",
+                "retrieval_score": 0.5,
+                "lexical_score": 0.5,
+            },
+            {
+                "evidence_id": 3,
+                "competency": "Cross-functional program delivery",
+                "claim": "Managed stakeholders, risks, milestones, and execution tracking.",
+                "target_persona": "All",
+                "retrieval_score": 0.5,
+                "lexical_score": 0.5,
+            },
+        ]
+
+        expected_top_ids = {"Director": 1, "Architect": 2, "TPM": 3}
+        for persona, expected_id in expected_top_ids.items():
+            with self.subTest(persona=persona):
+                ranked = rag_matcher._apply_persona_weighting(evidence, persona)
+                self.assertEqual(ranked[0]["evidence_id"], expected_id)
+                self.assertGreater(ranked[0]["persona_score"], 0)
+                self.assertTrue(ranked[0]["persona_signals"])
+                self.assertEqual(ranked[0]["retrieval_score"], 0.5)
+
     def test_keyword_mode_filters_persona_and_excludes_confidential_claims(self):
         shared_id = self.add_claim(
             "Cloud architecture", "I designed a cloud platform.", "All"

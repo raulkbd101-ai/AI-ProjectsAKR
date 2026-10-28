@@ -10,12 +10,61 @@ from database import DB_FILE, check_daily_limit
 # Candidate-specific output is still gated by a matching saved evidence claim.
 # These mappings describe conceptual adjacency, not interchangeable products.
 ADJACENT_TECH_BRIDGES = {
-    "snowflake": {"sources": ["BigQuery"], "relationship": "cloud data warehouse concepts"},
-    "aws": {"sources": ["GCP", "Azure"], "relationship": "cloud architecture concepts"},
-    "redshift": {"sources": ["BigQuery"], "relationship": "cloud data warehouse concepts"},
-    "azure": {"sources": ["GCP", "AWS"], "relationship": "cloud architecture concepts"},
-    "gcp": {"sources": ["AWS", "Azure"], "relationship": "cloud architecture concepts"},
+    "aws": {
+        "sources": ["GCP", "Azure"],
+        "relationship": "multi-cloud infrastructure architecture concepts",
+    },
+    "azure": {
+        "sources": ["GCP", "AWS"],
+        "relationship": "multi-cloud infrastructure architecture concepts",
+    },
+    "gcp": {
+        "sources": ["AWS", "Azure"],
+        "relationship": "multi-cloud infrastructure architecture concepts",
+    },
+    "snowflake": {
+        "sources": ["BigQuery", "Redshift"],
+        "relationship": "cloud data warehouse architecture concepts",
+    },
+    "databricks": {
+        "sources": ["BigQuery", "Redshift"],
+        "relationship": "data platform and engineering concepts",
+    },
+    "kafka": {
+        "sources": ["BigQuery", "Redshift", "data engineering", "data pipelines"],
+        "relationship": "data platform and pipeline architecture concepts",
+    },
+    "redshift": {
+        "sources": ["BigQuery"],
+        "relationship": "cloud data warehouse architecture concepts",
+    },
+    "python": {
+        "sources": ["C++", "MFC", "legacy systems"],
+        "relationship": "software engineering and modernization concepts",
+    },
+    "go": {
+        "sources": ["C++", "MFC", "legacy systems"],
+        "relationship": "software engineering and modernization concepts",
+    },
+    "microservices": {
+        "sources": ["C++", "MFC", "legacy systems"],
+        "relationship": "application modernization and distributed system concepts",
+    },
+    "cloud microservices": {
+        "sources": ["C++", "MFC", "legacy systems"],
+        "relationship": "application modernization and distributed system concepts",
+    },
+    "modern distributed architectures": {
+        "sources": ["C++", "MFC", "legacy systems"],
+        "relationship": "application modernization and distributed system concepts",
+    },
 }
+
+
+BRIDGE_DISCLAIMER_TEMPLATE = (
+    "Conceptual adjacency only: this cited claim does not establish hands-on {target} use "
+    "or direct production experience. Review the claim and its source before reusing this draft."
+)
 
 
 def generate_transferable_bridges(
@@ -31,25 +80,27 @@ def generate_transferable_bridges(
 
     bridges = []
     with closing(sqlite3.connect(DB_FILE)) as conn:
+        conn.row_factory = sqlite3.Row
         for keyword in dict.fromkeys(k.strip() for k in missing_keywords if k.strip()):
             mapping = ADJACENT_TECH_BRIDGES.get(keyword.casefold())
             if not mapping:
                 continue
 
-            if target_persona == "All":
-                rows = conn.execute(
-                    "SELECT competency, claim, target_persona FROM profile_evidence ORDER BY id"
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    """SELECT competency, claim, target_persona
-                       FROM profile_evidence
-                       WHERE target_persona IN ('All', ?)
-                       ORDER BY id""",
-                    (target_persona,),
-                ).fetchall()
+            sql = """SELECT id, competency, claim, context, evidence_summary,
+                            impact_metric, source_reference, target_persona,
+                            evidence_status
+                     FROM profile_evidence
+                     WHERE confidentiality != 'confidential'"""
+            params = ()
+            if target_persona != "All":
+                sql += " AND target_persona IN ('All', ?)"
+                params = (target_persona,)
+            sql += " ORDER BY id"
+            rows = conn.execute(sql, params).fetchall()
+            bridge_added = False
             for source in mapping["sources"]:
-                for competency, claim, evidence_persona in rows:
+                for row in rows:
+                    competency, claim = row["competency"], row["claim"]
                     source_pattern = rf"(?<!\w){re.escape(source)}(?!\w)"
                     supported_text = f"{competency} {claim}"
                     if not re.search(source_pattern, supported_text, re.IGNORECASE):
@@ -68,16 +119,35 @@ def generate_transferable_bridges(
                     if template_row is None:
                         continue
                     relationship, template = template_row
+                    draft = template.format(source=source, target=keyword).strip()
+                    disclaimer = BRIDGE_DISCLAIMER_TEMPLATE.format(target=keyword)
+                    target_guard = f"does not establish hands-on {keyword.casefold()} use"
+                    draft_lower = draft.casefold()
+                    if (
+                        "conceptual adjacency only" not in draft_lower
+                        or target_guard not in draft_lower
+                    ):
+                        draft = f"{draft} {disclaimer}".strip()
                     bridges.append({
                         "target_technology": keyword,
                         "source_technology": source,
                         "relationship": relationship,
-                        "target_persona": target_persona if target_persona != "All" else evidence_persona,
+                        "target_persona": (
+                            target_persona if target_persona != "All" else row["target_persona"]
+                        ),
+                        "supporting_evidence_id": row["id"],
                         "supporting_competency": competency,
                         "supporting_claim": claim,
-                        "statement": template.format(source=source, target=keyword),
+                        "supporting_evidence_status": row["evidence_status"],
+                        "supporting_evidence_summary": row["evidence_summary"],
+                        "supporting_source_reference": row["source_reference"],
+                        "statement": draft,
+                        "disclaimer": disclaimer,
                         "review_required": True,
                     })
+                    bridge_added = True
+                    break
+                if bridge_added:
                     break
     return bridges
 

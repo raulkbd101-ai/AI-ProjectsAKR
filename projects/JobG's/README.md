@@ -2,9 +2,11 @@
 
 Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of this project's original code and materials is not granted without separate written permission. See [LICENSE](LICENSE). Public GitHub availability does not automatically detect or prevent copying.
 
-**Latest tag:** `v1.2` (evidence dossier, persona tags, and reviewable tech bridges)
+**Latest JobG tag:** v1.4.1 (Week 2 job intake and human-governed triage; corrective tag for the PR #9 merge)
 
-**Next release target:** `v1.3.0` (local hybrid evidence retrieval; proposed, not yet released)
+**Tag note:** The pre-existing v1.4 tag is preserved and still points to an earlier commit; v1.4.1 points to merge commit a04bcbc. No tag was force-moved.
+
+**Next release:** Not scheduled. Weeks 3–4 remain roadmap work.
 
 **Status:** Local, single-user MVP
 
@@ -12,25 +14,28 @@ JobG's is a local, single-user job-search assistant. It helps a candidate review
 
 ## Product context
 
-Version 1.0 establishes the first governed workflow:
+JobG's is a local, single-user career workflow. The candidate supplies job details manually; the app does not scrape career websites or job boards.
 
-1. Enter a company, role, optional job URL, and job description.
-2. Compare the description with the candidate profile using transparent, rule-based keyword scanning.
-3. Review which profile skill terms are present and absent in the description.
-4. Decide whether to log the role yourself, subject to the daily cap.
+The current workflow has two layers:
 
-The candidate remains in control. Job descriptions are supplied manually; the app does not crawl job sites, rewrite a resume, or submit applications. The dashboard's profile-term scan reports literal skill mentions and does not estimate job fit or interview likelihood. Evidence claims are candidate-authored and not independently verified. The current `rag_matcher.py` prototype separately ranks saved evidence using keyword overlap and embeddings from local Ollama. It is a command-line retrieval tool, not a generative RAG assessment, and is not wired into the dashboard. See [EVIDENCE_PROFILE_GUIDE.md](EVIDENCE_PROFILE_GUIDE.md), [RAG_MATCHER_GUIDE.md](jobgs-engine/RAG_MATCHER_GUIDE.md), and [MVP_BUILD_PLAN.md](MVP_BUILD_PLAN.md) for details.
+1. The dashboard's original profile-term scan reports literal skill mentions and does not estimate job fit, interview likelihood, or ATS success.
+2. The Week 2 API accepts a company, role, job URL, description, and optional location/company details. POST /api/triage-job returns rule-based persona/domain/location suggestions, local evidence retrieval, bridge drafts, and a draft outreach message. POST /api/add-job saves a discovered role with DISCOVERED status; it does not submit an application or send a message. POST /api/ingest-companies upserts a bounded company batch into SQLite.
+
+The standalone rag_matcher.py combines 65% semantic similarity with 35% lexical keyword overlap, using local Ollama embeddings (nomic-embed-text). A retrieval score indicates evidence relevance only; it is not a fit, proficiency, or truth score. Managed job triage requires hybrid retrieval and reports an error if the local service is unavailable; the CLI also supports keyword-only operation. Evidence and bridges are candidate-provided drafts and require human review. The local SQLite database is not encrypted by the application; keep private data and database files out of Git.
+
+See [Week 1 — Local Vector Index & Hybrid RAG Search](https://github.com/raulkbd101-ai/AI-ProjectsAKR/wiki/Week-1-Milestone) and [Week 2 — Executive Decision Co-Pilot & SQLite Ingestion](https://github.com/raulkbd101-ai/AI-ProjectsAKR/wiki/Week-2-Milestone:-Executive-Decision-Co%E2%80%90Pilot-&-SQLite-Ingestion) in the GitHub Wiki for implementation details.
 
 ## Technology
 
 - Python 3.10 or newer
-- FastAPI for the local web application and form endpoints
-- Jinja2 for HTML rendering with autoescaping
-- Pydantic for validating structured evidence claims
-- SQLite for the local profile and application log
-- Uvicorn as the development server
-- Ollama with `nomic-embed-text` for optional, local-only embeddings in the retrieval prototype
-- GitHub Actions for automated syntax and unit checks on pull requests
+- FastAPI for the local web application and JSON API
+- Pydantic for validating evidence, job, and company payloads
+- SQLite for the profile evidence dossier, company inventory, and application tracker
+- Jinja2 for server-rendered HTML with autoescaping
+- Uvicorn as the local development server
+- Ollama with nomic-embed-text for local semantic evidence retrieval
+- PowerShell for the optional Ollama session wrapper on Windows
+- GitHub Actions for automated syntax, build, and unit checks
 
 ## Project structure
 
@@ -42,11 +47,14 @@ JobG's/
 │   ├── adr/                    # Architecture decisions and learning notes
 │   └── evaluations/            # Sanitized retrieval evaluations
 └── jobgs-engine/
-    ├── app.py                 # FastAPI interface and review/confirm flow
-    ├── database.py            # SQLite setup, sample profile, daily count
+    ├── app.py                 # FastAPI UI and job/evidence/company API routes
+    ├── database.py            # SQLite schema and additive initialization
     ├── matcher.py             # Explainable term scan and evidence-supported bridges
     ├── evidence.py            # Typed claim model and local evidence storage
-    ├── rag_matcher.py         # Standalone local hybrid evidence retrieval prototype
+    ├── job_copilot.py         # Rule-based triage, retrieval, drafts, and job logging
+    ├── ingest_companies.py   # Validated company inventory upsert utility
+    ├── run_rag_session.ps1   # Optional managed Ollama query session on Windows
+    ├── rag_matcher.py         # Local hybrid evidence retrieval CLI and SQLite cache
     ├── RAG_MATCHER_GUIDE.md   # Local model setup and usage
     ├── templates/
     │   └── evidence.html      # Evidence dossier page and navigation
@@ -73,7 +81,7 @@ python app.py
 
 Open <http://127.0.0.1:8000/> in your browser. Keep the terminal open while using the app; press **Ctrl+C** to stop the server.
 
-`database.py` creates the tables and seeds a generic profile only when the profile table is empty. Changing the seed values later will not overwrite an existing database. The database file is created in the current working directory, so start the app from `jobgs-engine` as shown above.
+`database.py` creates the tables and seeds a generic profile only when the profile table is empty. Changing the seed values later will not overwrite an existing database. The SQLite database path is resolved beside database.py inside jobgs-engine. Run commands from that folder so templates and other relative project resources resolve consistently.
 
 ## Verify locally
 
@@ -81,7 +89,7 @@ From `jobgs-engine` with the virtual environment active:
 
 ```powershell
 python -m unittest discover -s tests -v
-python -m compileall -q app.py database.py matcher.py evidence.py evidence_profile.py rag_matcher.py
+python -m compileall -q app.py database.py matcher.py evidence.py evidence_profile.py rag_matcher.py job_copilot.py ingest_companies.py
 ```
 
 GitHub Actions runs these checks for pull requests and pushes that change this project. The Ollama retrieval smoke test is optional because it requires Ollama and a local model to be installed.
@@ -97,24 +105,10 @@ The first command downloads model files to your PC. The Python code sends embedd
 
 ## Git and release workflow
 
-Use a short-lived branch for each change, then open a pull request into `main`. Review the diff and wait for the **JobG's CI** workflow to pass before merging.
+Use a short-lived branch for each change, then open a pull request into main. Review the diff and wait for the JobG's CI workflow to pass before merging. For a release tag, tag the verified merge commit on main; do not move an existing published tag.
 
-```powershell
-git switch -c feature/short-description
-git add ".github/workflows/jobgs-engine.yml" "projects/JobG's"
-git commit -m "feat(jobgs): describe the change"
-git push -u origin feature/short-description
-```
+The Week 2 implementation was merged by PR #9. The five checks on merge commit a04bcbc passed (build, Python 3.12, Python 3.14, deploy workflow, and report-build-status). The corrective tag v1.4.1 points to that merge commit; the earlier v1.4 tag remains unchanged and is not the Week 2 release target.
 
-For the proposed `v1.3.0` release, first merge the reviewed pull request into `main` and wait for CI to pass. Then create the tag from the updated `main`:
+See CHANGELOG.md for release scope and verification notes. A Git tag is distinct from a published GitHub Release entry. Generative resume rewriting, job-site scraping, autonomous agents, and form automation are not included in this release.
 
-```powershell
-git switch main
-git pull
-git tag -a v1.3.0 -m "JobG's v1.3.0 — local hybrid evidence retrieval"
-git push origin v1.3.0
-```
-
-See [CHANGELOG.md](CHANGELOG.md) for the release history and commit notes. Generative RAG analysis and resume-draft suggestions remain future work and must be grounded in evidence and reviewed by the candidate.
-
-For the longer learning and delivery plan, see the [24-week AI engineering roadmap](AI_UPSKILLING_ROADMAP.md), including the first four weeks on local retrieval, vector search, and evidence-grounded RAG.
+For the learning plan, see the 24-week AI engineering roadmap, including the Week 1 retrieval and Week 2 co-pilot milestones.

@@ -58,13 +58,15 @@ def _create_job_tables(cursor):
             rag_results_json TEXT NOT NULL DEFAULT '{}',
             transferable_bridges_json TEXT NOT NULL DEFAULT '[]',
             outreach_draft TEXT NOT NULL DEFAULT '',
+            profile_coverage REAL,
             status TEXT NOT NULL DEFAULT 'DISCOVERED'
-                CHECK (status IN ('DISCOVERED', 'REVIEWED', 'APPLIED', 'INTERVIEW', 'OFFER', 'REJECTED', 'WITHDRAWN')),
+                CHECK (status IN ('DISCOVERED', 'USER_REVIEWED', 'APPLIED', 'INTERVIEWING', 'OFFER', 'REJECTED', 'WITHDRAWN', 'ARCHIVED')),
             human_reviewed_at TEXT,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    _upgrade_application_tracker(cursor)
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_application_tracker_status_created "
         "ON application_tracker(status, created_at DESC)"
@@ -73,6 +75,76 @@ def _create_job_tables(cursor):
         "CREATE INDEX IF NOT EXISTS idx_application_tracker_persona "
         "ON application_tracker(assigned_persona)"
     )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_application_tracker_coverage "
+        "ON application_tracker(profile_coverage)"
+    )
+
+
+def _upgrade_application_tracker(cursor):
+    """Add coverage and ARCHIVED support without discarding local tracker rows."""
+    columns = {
+        row[1] for row in cursor.execute("PRAGMA table_info(application_tracker)").fetchall()
+    }
+    create_sql = cursor.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='application_tracker'"
+    ).fetchone()[0]
+
+    if "profile_coverage" not in columns:
+        cursor.execute("ALTER TABLE application_tracker ADD COLUMN profile_coverage REAL")
+
+    required_statuses = ("ARCHIVED", "USER_REVIEWED", "INTERVIEWING")
+    if not all(status in create_sql for status in required_statuses):
+        cursor.execute("ALTER TABLE application_tracker RENAME TO application_tracker_legacy")
+        cursor.execute('''
+            CREATE TABLE application_tracker (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company_id INTEGER NOT NULL REFERENCES companies_inventory(id),
+                company_name TEXT NOT NULL,
+                role_title TEXT NOT NULL,
+                job_url TEXT NOT NULL UNIQUE,
+                location TEXT NOT NULL DEFAULT '',
+                work_model TEXT NOT NULL DEFAULT 'Unknown'
+                    CHECK (work_model IN ('Remote', 'Hybrid', 'On-site', 'Unknown')),
+                raw_description TEXT NOT NULL,
+                assigned_persona TEXT NOT NULL DEFAULT 'Unclear'
+                    CHECK (assigned_persona IN ('Director', 'Architect', 'TPM', 'Unclear')),
+                domain_tags_json TEXT NOT NULL DEFAULT '[]',
+                triage_json TEXT NOT NULL DEFAULT '{}',
+                rag_results_json TEXT NOT NULL DEFAULT '{}',
+                transferable_bridges_json TEXT NOT NULL DEFAULT '[]',
+                outreach_draft TEXT NOT NULL DEFAULT '',
+                profile_coverage REAL,
+                status TEXT NOT NULL DEFAULT 'DISCOVERED'
+                    CHECK (status IN ('DISCOVERED', 'USER_REVIEWED', 'APPLIED', 'INTERVIEWING', 'OFFER', 'REJECTED', 'WITHDRAWN', 'ARCHIVED')),
+                human_reviewed_at TEXT,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        copy_columns = [
+            "id", "company_id", "company_name", "role_title", "job_url", "location",
+            "work_model", "raw_description", "assigned_persona", "domain_tags_json",
+            "triage_json", "rag_results_json", "transferable_bridges_json",
+            "outreach_draft", "profile_coverage", "status", "human_reviewed_at",
+            "created_at", "updated_at",
+        ]
+        select_columns = []
+        for name in copy_columns:
+            if name == "profile_coverage" and name not in columns:
+                select_columns.append("NULL AS profile_coverage")
+            elif name == "status":
+                select_columns.append(
+                    "CASE status WHEN 'REVIEWED' THEN 'USER_REVIEWED' "
+                    "WHEN 'INTERVIEW' THEN 'INTERVIEWING' ELSE status END AS status"
+                )
+            else:
+                select_columns.append(name)
+        cursor.execute(
+            "INSERT INTO application_tracker (" + ", ".join(copy_columns) + ") "
+            "SELECT " + ", ".join(select_columns) + " FROM application_tracker_legacy"
+        )
+        cursor.execute("DROP TABLE application_tracker_legacy")
 
 
 def init_job_tables():
@@ -371,7 +443,7 @@ def seed_multicloud_profile():
     print("✅ Multi-cloud profile stack and self-reported evidence seeded.")
 
 def check_daily_limit():
-    """Check how many target applications have been processed today (Max 10)."""
+    """Check how many roles were user-reviewed and logged toward today's cap."""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     today_str = date.today().isoformat()
@@ -382,6 +454,55 @@ def check_daily_limit():
 
     remaining = max(0, 10 - count)
     return {"today_count": count, "remaining_slots": remaining, "can_apply": remaining > 0}
+
+
+def get_dashboard_analytics():
+    """Return local activity counts and current-status snapshot ratios."""
+    daily = check_daily_limit()
+    conn = sqlite3.connect(DB_FILE, timeout=10)
+    try:
+        row = conn.execute("""
+            SELECT COUNT(*),
+                   SUM(CASE WHEN TRIM(COALESCE(outreach_draft, '')) <> ''
+                                 AND status IN ('DISCOVERED', 'USER_REVIEWED', 'APPLIED', 'INTERVIEWING')
+                            THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN status = 'DISCOVERED' THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN status = 'USER_REVIEWED' THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN status = 'APPLIED' THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN status = 'INTERVIEWING' THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN status = 'OFFER' THEN 1 ELSE 0 END),
+                   SUM(CASE WHEN status IN ('REJECTED', 'WITHDRAWN', 'ARCHIVED')
+                            THEN 1 ELSE 0 END)
+            FROM application_tracker
+        """).fetchone()
+    finally:
+        conn.close()
+
+    total, outreach, discovered, reviewed, applied, interviewing, offers, closed = (
+        value or 0 for value in row
+    )
+
+    def ratio(numerator, denominator):
+        return round(100 * numerator / denominator, 1) if denominator else 0.0
+
+    return {
+        **daily,
+        "daily_cap": 10,
+        "daily_progress_percent": min(100, round(daily["today_count"] * 10)),
+        "total_tracked_roles": total,
+        "active_outreach_drafts": outreach,
+        "status_breakdown": {
+            "discovered": discovered,
+            "reviewed": reviewed,
+            "applied": applied,
+            "interviewing": interviewing,
+            "offers": offers,
+            "closed": closed,
+        },
+        "applied_share_percent": ratio(applied, total),
+        "interview_to_applied_percent": ratio(interviewing, applied),
+        "offer_to_applied_percent": ratio(offers, applied),
+    }
 
 if __name__ == "__main__":
     init_db()

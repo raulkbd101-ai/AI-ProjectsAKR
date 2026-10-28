@@ -2,6 +2,24 @@
 
 All notable JobG's changes are recorded here. Existing tags are preserved as published; planned releases use Semantic Versioning.
 
+## [Unreleased] — proposed v1.6
+
+### Added — Week 4 dashboard and tracker
+
+- Local SQLite-backed tracker page with persona, domain, status, keyword, profile-coverage, and RAG-relevance filters.
+- Human-governed lifecycle transitions using `DISCOVERED`, `USER_REVIEWED`, `APPLIED`, `INTERVIEWING`, `OFFER`, `REJECTED`, `WITHDRAWN`, and terminal `ARCHIVED` states.
+- Dashboard analytics for tracked roles, active outreach drafts, current status counts, current-status snapshot ratios, and progress against the 10-role daily logging cap.
+- Markdown and JSON offline exports for tracked roles, saved evidence matches, bridge drafts, and outreach drafts. Confidential evidence claim text is redacted.
+- Additive SQLite migration preserves tracked roles, adds nullable profile-term coverage, and maps older `REVIEWED`/`INTERVIEW` states to `USER_REVIEWED`/`INTERVIEWING`.
+- Automated tracker tests cover lifecycle guards, filters, reporting, exports, and legacy database migration.
+
+### Governance notes
+
+- Daily cap measures roles the user logged after review; it does not verify external application submission.
+- RAG relevance and profile keyword coverage are separate retrieval indicators, not a calibrated job-fit or hiring-probability score.
+- Stage ratios are based on current status snapshots. Historical funnel conversion requires a status-history table.
+- JobG's stores outreach drafts but does not send messages or submit applications.
+
 ## [Unreleased] — proposed v1.5
 
 ### Added

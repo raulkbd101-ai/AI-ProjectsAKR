@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JobG's — Application Tracker</title>
+  <style>
+    :root { color-scheme: dark; --page:#0f172a; --panel:#1e293b; --raised:#334155; --border:#475569; --text:#f8fafc; --muted:#cbd5e1; --sky:#38bdf8; --blue:#0284c7; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:24px; background:var(--page); color:var(--text); font:15px/1.5 system-ui,sans-serif; }
+    main { max-width:1120px; margin:auto; }
+    h1,h2 { color:var(--sky); }
+    .nav { display:flex; gap:10px; margin-bottom:18px; }
+    .nav a, .button { color:var(--text); text-decoration:none; background:var(--raised); border:0; border-radius:6px; padding:9px 12px; cursor:pointer; }
+    .nav a:hover, .button:hover { background:var(--blue); }
+    .panel,.role { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px; margin-bottom:16px; }
+    .filters { display:grid; grid-template-columns:repeat(4,minmax(145px,1fr)); gap:12px; align-items:end; }
+    label { display:grid; gap:5px; color:var(--muted); font-size:13px; }
+    select,input { min-height:39px; width:100%; color:var(--text); background:var(--page); border:1px solid var(--border); border-radius:6px; padding:8px; }
+    button.primary { min-height:39px; color:white; background:var(--blue); border:0; border-radius:6px; padding:8px 12px; font-weight:700; cursor:pointer; }
+    .actions,.role-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .meta { color:var(--muted); }
+    .tag { display:inline-block; margin:3px 4px 0 0; padding:2px 9px; background:var(--raised); border-radius:999px; font-size:12px; }
+    .notice { color:#4ade80; }
+    .status-form { display:flex; gap:8px; align-items:end; margin-top:14px; }
+    .status-form label { min-width:180px; }
+    a { color:var(--sky); }
+    @media(max-width:760px) { body{padding:14px} .filters{grid-template-columns:repeat(2,minmax(0,1fr))} }
+    @media(max-width:480px) { .filters{grid-template-columns:1fr} .role-head{align-items:flex-start; flex-direction:column} .status-form{align-items:stretch; flex-direction:column} }
+  </style>
+</head>
+<body>
+<main>
+  <nav class="nav" aria-label="Main navigation">
+    <a href="/">Dashboard</a><a href="/tracker" aria-current="page">Tracker</a><a href="/evidence">Evidence Dossier</a>
+    <a href="/export/applications?format=markdown">Export Markdown</a>
+    <a href="/export/applications?format=json">Export JSON</a>
+  </nav>
+  <h1>Application Tracker</h1>
+  <p class="meta">Review and manage roles locally. RAG relevance and profile keyword coverage are separate retrieval indicators, not job-fit scores.</p>
+  {% if notice %}<p class="notice" role="status">{{ notice }}</p>{% endif %}
+
+  <section class="panel">
+    <form method="get" action="/tracker" class="filters">
+      <label>Persona
+        <select name="persona"><option value="">All personas</option>
+          {% for persona in personas %}<option value="{{ persona }}" {% if selected_persona == persona %}selected{% endif %}>{{ persona }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Domain
+        <select name="domain"><option value="">All domains</option>
+          {% for domain in domains %}<option value="{{ domain }}" {% if selected_domain == domain %}selected{% endif %}>{{ domain }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Status
+        <select name="status"><option value="">All statuses</option>
+          {% for status in statuses %}<option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Company, role, or location
+        <input type="search" name="q" maxlength="160" value="{{ keyword }}" placeholder="Search tracker">
+      </label>
+      <label>Min profile keyword coverage (%)
+        <input type="number" name="min_coverage" min="0" max="100" step="0.1" value="{{ min_coverage }}">
+      </label>
+      <label>Max profile keyword coverage (%)
+        <input type="number" name="max_coverage" min="0" max="100" step="0.1" value="{{ max_coverage }}">
+      </label>
+      <label>Min best RAG relevance (0–1)
+        <input type="number" name="min_relevance" min="0" max="1" step="0.01" value="{{ min_relevance }}">
+      </label>
+      <label>Max best RAG relevance (0–1)
+        <input type="number" name="max_relevance" min="0" max="1" step="0.01" value="{{ max_relevance }}">
+      </label>
+      <label>Sort
+        <select name="sort">
+          <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest</option>
+          <option value="rag_desc" {% if selected_sort == 'rag_desc' %}selected{% endif %}>Best RAG relevance</option>
+          <option value="coverage_desc" {% if selected_sort == 'coverage_desc' %}selected{% endif %}>Highest keyword coverage</option>
+          <option value="company_asc" {% if selected_sort == 'company_asc' %}selected{% endif %}>Company A–Z</option>
+        </select>
+      </label>
+      <div class="actions"><button class="primary" type="submit">Apply filters</button><a class="button" href="/tracker">Reset</a></div>
+    </form>
+  </section>
+
+  <p class="meta">{{ roles|length }} role(s) shown</p>
+  {% for role in roles %}
+  <article class="role">
+    <div class="role-head">
+      <div>
+        <h2>{{ role.company_name }} — {{ role.role_title }}</h2>
+        <div class="meta">{{ role.assigned_persona }} · {{ role.status }} · {{ role.location or 'Location unknown' }} · {{ role.work_model }}</div>
+      </div>
+      {% if role.job_url %}<a href="{{ role.job_url }}" target="_blank" rel="noopener noreferrer">Open job posting</a>{% endif %}
+    </div>
+    <p>{% for tag in role.domain_tags %}<span class="tag">{{ tag }}</span>{% endfor %}</p>
+    <p class="meta">
+      Profile keyword coverage: {% if role.profile_coverage is not none %}{{ '%.1f'|format(role.profile_coverage) }}%{% else %}not saved for this role{% endif %}
+      · Best RAG relevance: {% if role.best_rag_relevance is not none %}{{ '%.3f'|format(role.best_rag_relevance) }}{% else %}not available{% endif %}
+    </p>
+    {% if transitions.get(role.status) %}
+    <form class="status-form" method="post" action="/tracker/{{ role.id }}/status">
+      <label>Move status to
+        <select name="status" required>{% for next_status in transitions.get(role.status, []) %}<option value="{{ next_status }}">{{ next_status }}</option>{% endfor %}</select>
+      </label>
+      <button class="primary" type="submit">Update status</button>
+    </form>
+    {% else %}<p class="meta">This role is archived; no further transitions are available.</p>{% endif %}
+  </article>
+  {% else %}
+  <section class="panel meta">No roles match these filters. New roles appear after they are ingested through the job triage flow.</section>
+  {% endfor %}
+</main>
+</body>
+</html>

@@ -37,21 +37,59 @@ class TransferableBridgeTests(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def add_claim(self, competency, claim, persona="All"):
-        evidence.add_evidence_claim(evidence.EvidenceClaim(
+        return evidence.add_evidence_claim(evidence.EvidenceClaim(
             competency=competency,
             claim=claim,
             evidence_summary="A project summary supports this candidate-authored claim.",
+            source_reference="Candidate profile evidence record",
             target_persona=persona,
         ))
 
     def test_bridge_requires_explicit_matching_evidence(self):
-        self.add_claim("Cloud architecture", "I designed a GCP cloud architecture.", "Architect")
+        claim_id = self.add_claim("Cloud architecture", "I designed a GCP cloud architecture.", "Architect")
 
         bridges = matcher.generate_transferable_bridges(["AWS"], "Architect")
         self.assertEqual(len(bridges), 1)
         self.assertEqual(bridges[0]["source_technology"], "GCP")
+        self.assertEqual(bridges[0]["supporting_evidence_id"], claim_id)
+        self.assertEqual(bridges[0]["supporting_claim"], "I designed a GCP cloud architecture.")
+        self.assertEqual(bridges[0]["supporting_evidence_status"], "self_reported")
+        self.assertEqual(bridges[0]["supporting_source_reference"], "Candidate profile evidence record")
         self.assertTrue(bridges[0]["review_required"])
         self.assertIn("does not establish hands-on AWS use", bridges[0]["statement"])
+        self.assertIn("Conceptual adjacency only", bridges[0]["disclaimer"])
+
+    def test_expanded_data_and_legacy_mappings_still_require_evidence(self):
+        self.add_claim("Data warehouse", "I designed a BigQuery data warehouse.")
+        self.add_claim("Legacy modernization", "I modernized an MFC legacy system.")
+
+        warehouse_bridges = matcher.generate_transferable_bridges(
+            ["Snowflake", "Databricks"], "All"
+        )
+        legacy_bridges = matcher.generate_transferable_bridges(
+            ["Go", "Cloud Microservices", "Modern Distributed Architectures"], "All"
+        )
+
+        self.assertEqual(
+            {bridge["target_technology"] for bridge in warehouse_bridges},
+            {"Snowflake", "Databricks"},
+        )
+        self.assertEqual(
+            {bridge["target_technology"] for bridge in legacy_bridges},
+            {"Go", "Cloud Microservices", "Modern Distributed Architectures"},
+        )
+        self.assertTrue(all(bridge["supporting_evidence_id"] for bridge in warehouse_bridges + legacy_bridges))
+        self.assertTrue(all("does not establish hands-on" in bridge["statement"] for bridge in warehouse_bridges + legacy_bridges))
+
+    def test_data_engineering_evidence_can_support_kafka_conceptual_bridge(self):
+        claim_id = self.add_claim(
+            "Data engineering",
+            "I led enterprise data engineering and data pipelines across cloud platforms.",
+        )
+        bridges = matcher.generate_transferable_bridges(["Kafka"], "All")
+        self.assertEqual(len(bridges), 1)
+        self.assertEqual(bridges[0]["supporting_evidence_id"], claim_id)
+        self.assertEqual(bridges[0]["source_technology"], "data engineering")
 
     def test_bridge_omitted_without_support_or_for_another_persona(self):
         self.add_claim("Cloud architecture", "I designed a GCP cloud architecture.", "Director")

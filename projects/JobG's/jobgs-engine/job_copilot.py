@@ -316,7 +316,12 @@ def triage_job(job: JobSubmission) -> dict:
         },
         "evidence_retrieval": rag_result,
         "transferable_bridges": bridges,
-        "bridge_notice": "Bridge drafts describe conceptual adjacency and require human review; they do not claim hands-on use of the target technology.",
+        "bridge_notice": (
+            "Bridge drafts are conceptual adjacency only and are returned only with a matching "
+            "candidate-provided SQLite evidence claim and its provenance. They do not establish "
+            "direct hands-on production use of the target technology. Review every cited claim "
+            "before reusing a draft."
+        ),
         "outreach_draft": _outreach_draft(job.company_name, job.role_title, rag_result),
         "outreach_policy": "Draft only. JobG's does not send messages.",
         "status": "DISCOVERED",

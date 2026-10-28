@@ -27,6 +27,60 @@ DEFAULT_SEMANTIC_WEIGHT = 0.65
 TOKEN_PATTERN = re.compile(r"[a-z0-9][a-z0-9+#.-]*", re.IGNORECASE)
 ALLOWED_PERSONAS = {"All", "Director", "Architect", "TPM"}
 
+# Persona signals are used only to prioritize relevant evidence for review.
+# They do not represent job-fit, proficiency, or truth scores.
+PERSONA_KEYWORD_WEIGHTS = {
+    "Director": {
+        "leadership": 3,
+        "team leadership": 3,
+        "global team": 3,
+        "budget management": 3,
+        "budget": 2,
+        "organizational transformation": 3,
+        "transformation": 2,
+        "operating model": 2,
+        "executive strategy": 2,
+        "finops": 2,
+        "delivery": 1,
+    },
+    "Architect": {
+        "cloud migration": 3,
+        "multi-cloud": 3,
+        "multi cloud": 3,
+        "system design": 3,
+        "architecture": 2,
+        "scalability": 3,
+        "scalable": 2,
+        "cloud architecture": 3,
+        "reliability": 2,
+        "disaster recovery": 2,
+        "iam": 2,
+        "platform modernization": 2,
+    },
+    "TPM": {
+        "cross-functional": 3,
+        "program delivery": 3,
+        "program management": 3,
+        "stakeholder management": 3,
+        "stakeholder": 2,
+        "risk mitigation": 3,
+        "risk": 2,
+        "execution tracking": 3,
+        "milestone": 2,
+        "dependency": 2,
+        "governance": 2,
+        "delivery": 1,
+    },
+}
+
+_PERSONA_TERM_PATTERNS = {
+    persona: [
+        (re.compile(rf"(?<!\w){re.escape(term)}(?!\w)", re.IGNORECASE), weight, term)
+        for term, weight in terms.items()
+    ]
+    for persona, terms in PERSONA_KEYWORD_WEIGHTS.items()
+}
+
 
 def _local_ollama_url() -> str:
     """Return a loopback Ollama URL and reject remote hosts by design."""
@@ -185,6 +239,73 @@ def _tokens(text: str) -> set[str]:
     return {token.casefold() for token in TOKEN_PATTERN.findall(text)}
 
 
+def _persona_evidence_signals(match: dict, persona: str) -> tuple[float, list[str]]:
+    """Return normalized persona-keyword coverage and the matched signals."""
+    if persona not in PERSONA_KEYWORD_WEIGHTS:
+        return 0.0, []
+
+    searchable_text = " ".join(
+        str(match.get(field) or "")
+        for field in (
+            "competency",
+            "claim",
+            "context",
+            "evidence_summary",
+            "impact_metric",
+        )
+    )
+
+    matched_terms = []
+    matched_weight = 0
+    for pattern, weight, term in _PERSONA_TERM_PATTERNS[persona]:
+        if pattern.search(searchable_text):
+            matched_terms.append(term)
+            matched_weight += weight
+
+    total_weight = sum(PERSONA_KEYWORD_WEIGHTS[persona].values())
+    score = matched_weight / total_weight if total_weight else 0.0
+    return score, matched_terms
+
+
+def _apply_persona_weighting(matches: list[dict], persona: str) -> list[dict]:
+    """Blend persona alignment into evidence retrieval scores for review."""
+    if persona == "All":
+        return matches
+
+    ranked = []
+    for match in matches:
+        base_score = float(match.get("retrieval_score") or 0.0)
+        persona_score, matched_terms = _persona_evidence_signals(match, persona)
+
+        # search_evidence already limits explicit claims to this persona plus
+        # shared "All" claims. Prefer an explicit persona tag slightly.
+        scope_score = 1.0 if match.get("target_persona") == persona else 0.5
+        final_score = (
+            0.70 * base_score
+            + 0.25 * persona_score
+            + 0.05 * scope_score
+        )
+
+        ranked_match = dict(match)
+        ranked_match["base_retrieval_score"] = round(base_score, 4)
+        ranked_match["persona_score"] = round(persona_score, 4)
+        ranked_match["persona_signals"] = matched_terms
+        # Preserve retrieval_score as the original hybrid/lexical metric for
+        # backward compatibility; use the adjusted score only for ordering.
+        ranked_match["persona_adjusted_score"] = round(final_score, 4)
+        ranked.append(ranked_match)
+
+    ranked.sort(
+        key=lambda item: (
+            item["persona_adjusted_score"],
+            item["base_retrieval_score"],
+            item.get("lexical_score", 0.0),
+        ),
+        reverse=True,
+    )
+    return ranked
+
+
 def _cosine(left: list[float], right: list[float]) -> float:
     if len(left) != len(right):
         return 0.0
@@ -304,7 +425,7 @@ def search_evidence(
             "retrieval_score": round(combined_score, 4),
         })
 
-    matches.sort(key=lambda item: (item["retrieval_score"], item["lexical_score"]), reverse=True)
+    matches = _apply_persona_weighting(matches, target_persona)
     return {
         "retrieval_mode": "hybrid" if semantic_available else "lexical_fallback",
         "model_name": model_name if semantic_available else None,

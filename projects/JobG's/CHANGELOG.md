@@ -2,7 +2,24 @@
 
 All notable JobG's changes are recorded here. Existing tags are preserved as published; planned releases use Semantic Versioning.
 
-## [Unreleased] — proposed v1.3.0
+## [Unreleased] — proposed v1.5
+
+### Added
+
+- Persona-weighted evidence ranking for Director, Architect, and TPM, with the original retrieval score retained and persona signals exposed for review.
+- Evidence-grounded transferable technology bridges for cloud, data-platform, and legacy modernization concepts. Drafts include supporting SQLite claim provenance and explicit conceptual-adjacency disclaimers.
+- Bridge coverage for 26 unit tests across persona ranking, evidence requirements, persona scope, expanded technology mappings, and existing workflows.
+
+### Guardrails
+
+- Bridge drafts are emitted only when eligible, non-confidential profile evidence explicitly supports the mapped source technology.
+- No bridge claims direct hands-on production use of a target technology; human review remains required.
+
+### Verification
+
+- Local Windows unit test suite: 26 tests passed.
+
+## [1.3.0] — local hybrid retrieval
 
 ### Added
 

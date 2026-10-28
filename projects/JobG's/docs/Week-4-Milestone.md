@@ -54,6 +54,6 @@ Exports include job details, saved evidence matches, transferable bridge drafts,
 
 ## Release
 
-**Release target:** v1.6 — Executive Dashboard, Lifecycle & FinOps Analytics.
+**Released:** `v1.6` — Executive Dashboard, Lifecycle & FinOps Analytics. The Week 4 PR was merged before the annotated release tag was published.
 
-Publish the release tag only after the release pull request has been reviewed and merged.
+Week 4 closes the first four-week personal MVP milestone. The overall JobG's product vision and 24-week learning plan continue. This release does not deliver a public service, automatic job-site discovery, or automatic application submission.

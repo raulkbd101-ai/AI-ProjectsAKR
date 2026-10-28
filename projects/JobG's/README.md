@@ -1,73 +1,111 @@
-# JobG's — Personal Job Search Engine
+# JobG's — Personal Executive Job-Search Assistant
 
-Copyright (c) 2026 Amith Raul. All rights reserved. Reuse of this project's original code and materials is not granted without separate written permission. See [LICENSE](LICENSE). Public GitHub availability does not automatically detect or prevent copying.
+Copyright (c) 2026 Amith Raul. All rights reserved. See [LICENSE](LICENSE) for the project's reuse terms.
 
-**Latest JobG tag:** v1.4.1 (Week 2 job intake and human-governed triage; corrective tag for the PR #9 merge)
+**Current release:** `v1.6`
+**Project status:** Four-week personal MVP completed; follow-on AI learning and product work remain planned.
+**Intended use:** One candidate, running locally on their own PC.
 
-**Tag note:** The pre-existing v1.4 tag is preserved and still points to an earlier commit; v1.4.1 points to merge commit a04bcbc. No tag was force-moved.
+## Why this MVP exists
 
-**Next release:** Not scheduled. Weeks 3–4 remain roadmap work.
+Preparing and submitting a single job application can take about 50 minutes when the candidate repeatedly researches a role, compares it with several versions of a resume, rewrites materials, and tracks the result by hand. JobG's was built to reduce that repeated preparation and administration effort and to make the reasoning easier to inspect. Its focus is evidence-backed role review, reusable profile facts, persona selection, application tracking, and exportable notes.
 
-**Status:** Local, single-user MVP
+JobG's does **not** promise to bypass ATS systems or prevent rejection. It helps surface relevant candidate-provided evidence, literal profile-term coverage, and possible technology adjacencies so the candidate can prepare a more targeted and truthful application. A hiring system may still reject an application for many reasons. The candidate reviews each result and submits applications manually.
 
-JobG's is a local, single-user job-search assistant. It helps a candidate review manually supplied job descriptions against a locally stored profile and track roles they choose to pursue. It is designed to make job-search decisions deliberate and to track a daily limit of 10 logged entries.
+This is a personal workflow MVP and learning portfolio—not a public multi-user service or a commercial job marketplace.
 
-## Product context
+## What v1.6 contains
 
-JobG's is a local, single-user career workflow. The candidate supplies job details manually; the app does not scrape career websites or job boards.
+- **Profile and evidence dossier:** SQLite stores a local master profile and candidate-authored claims, with persona tags, provenance notes, and confidentiality labels.
+- **Three executive tracks:** Director / Senior Director, Senior Platform Architect, and Principal TPM / Delivery Lead.
+- **Job intake and triage:** Manually supplied job information is triaged through rule-based persona, domain, and location suggestions. `/api/triage-job` previews a role; `/api/add-job` saves it as `DISCOVERED` for review.
+- **Local evidence retrieval:** `rag_matcher.py` combines lexical overlap with local Ollama `nomic-embed-text` embeddings. Persona weighting changes the evidence ordering. Retrieval relevance is not job fit, proficiency, or truth verification.
+- **Transferable technology bridges:** Allowlisted conceptual-adjacency drafts are returned only when an eligible, non-confidential SQLite claim supports the source technology. Drafts include provenance and disclaimers; they do not assert use of the target technology.
+- **Human-governed tracker:** Lifecycle updates are restricted to allowed transitions. The dashboard filters by persona, domain, status, search text, profile coverage, and retrieval relevance.
+- **Activity and offline review:** Summary metrics, the 10-role daily logging cap, and Markdown/JSON exports help organize the process. The cap counts locally logged roles; it does not confirm external submissions.
+- **No external automation:** JobG's does not crawl job boards, send LinkedIn messages, log in to job portals, or submit applications. It can draft outreach text for the candidate to review.
 
-The current workflow has two layers:
+## How the workflow fits together
 
-1. The dashboard's original profile-term scan reports literal skill mentions and does not estimate job fit, interview likelihood, or ATS success.
-2. The Week 2 API accepts a company, role, job URL, description, and optional location/company details. POST /api/triage-job returns rule-based persona/domain/location suggestions, local evidence retrieval, bridge drafts, and a draft outreach message. POST /api/add-job saves a discovered role with DISCOVERED status; it does not submit an application or send a message. POST /api/ingest-companies upserts a bounded company batch into SQLite.
+```text
+Candidate finds a role and supplies its URL and job description
+        ↓
+FastAPI validates the supplied fields
+        ↓
+Rule-based triage suggests persona, domain, and location/work model
+        ↓
+Local Ollama hybrid retrieval ranks eligible SQLite evidence
+        ↓
+Evidence-backed bridge drafts and outreach draft are prepared for review
+        ↓
+Candidate reviews and saves the role as DISCOVERED
+        ↓
+Candidate updates status manually, applies externally, and exports notes if useful
+```
 
-The standalone rag_matcher.py combines 65% semantic similarity with 35% lexical keyword overlap, using local Ollama embeddings (nomic-embed-text). A retrieval score indicates evidence relevance only; it is not a fit, proficiency, or truth score. Managed job triage requires hybrid retrieval and reports an error if the local service is unavailable; the CLI also supports keyword-only operation. Evidence and bridges are candidate-provided drafts and require human review. The local SQLite database is not encrypted by the application; keep private data and database files out of Git.
+SQLite is the source of truth. The vector embedding table is a derived local cache. Company inventory records are created or updated on demand from supplied company information; there is no large preloaded global directory or automated directory crawler.
 
-See [Week 1 — Local Vector Index & Hybrid RAG Search](https://github.com/raulkbd101-ai/AI-ProjectsAKR/wiki/Week-1-Milestone) and [Week 2 — Executive Decision Co-Pilot & SQLite Ingestion](https://github.com/raulkbd101-ai/AI-ProjectsAKR/wiki/Week-2-Milestone:-Executive-Decision-Co%E2%80%90Pilot-&-SQLite-Ingestion) in the GitHub Wiki for implementation details.
+## Screenshots
+
+These local UI snapshots show the dashboard, tracker, and Markdown export workflow. They illustrate the interface; they are not substitutes for automated tests or evidence of ATS outcomes.
+
+### Dashboard and daily activity
+
+![JobG's dashboard with daily cap and activity summary](docs/screenshots/dashboard.png)
+
+### Application tracker
+
+![JobG's application tracker with filters and a sample role](docs/screenshots/application-tracker.png)
+
+### Markdown export
+
+![JobG's tracker page with the Markdown export download completed](docs/screenshots/markdown-export.png)
 
 ## Technology
 
-- Python 3.10 or newer
-- FastAPI for the local web application and JSON API
-- Pydantic for validating evidence, job, and company payloads
-- SQLite for the profile evidence dossier, company inventory, and application tracker
-- Jinja2 for server-rendered HTML with autoescaping
-- Uvicorn as the local development server
-- Ollama with nomic-embed-text for local semantic evidence retrieval
-- PowerShell for the optional Ollama session wrapper on Windows
-- GitHub Actions for automated syntax, build, and unit checks
+- Python 3.10+ (the project has also been exercised with Python 3.14)
+- FastAPI, Uvicorn, Pydantic, and Jinja2
+- SQLite for profile evidence, company inventory, job records, and the rebuildable embedding cache
+- Ollama with `nomic-embed-text` for local embedding generation
+- PowerShell is intended to manage the Ollama query lifecycle for the API workflow
+- `unittest` and GitHub Actions for automated checks
 
-## Project structure
+## Repository map
 
 ```text
 JobG's/
-├── README.md
-├── AI_UPSKILLING_ROADMAP.md
-├── docs/
-│   ├── adr/                    # Architecture decisions and learning notes
-│   └── evaluations/            # Sanitized retrieval evaluations
+├── README.md                         # This product and setup overview
+├── PRODUCT_OVERVIEW.md               # Goals, workflow, boundaries, and architecture
+├── CHANGELOG.md                      # Tagged release history through v1.6
+├── MVP_BUILD_PLAN.md                 # MVP scope and completed learning record
+├── AI_UPSKILLING_ROADMAP.md           # Completed Weeks 1–4 and planned Weeks 5–24
+├── EVIDENCE_PROFILE_GUIDE.md          # Safe, evidence-aware profile data guidance
+└── docs/
+    ├── Week-1-Milestone.md            # Local retrieval foundation
+    ├── Week-2-Milestone.md            # Job intake, triage, and SQLite inventory
+    ├── Week-3-Milestone.md            # Persona weighting and evidence-grounded bridges
+    ├── Week-4-Milestone.md            # Tracker, analytics, filters, and exports
+    ├── adr/                           # Architecture decision records
+    └── evaluations/                   # Sanitized retrieval evaluation notes
+
 └── jobgs-engine/
-    ├── app.py                 # FastAPI UI and job/evidence/company API routes
-    ├── database.py            # SQLite schema and additive initialization
-    ├── matcher.py             # Explainable term scan and evidence-supported bridges
-    ├── evidence.py            # Typed claim model and local evidence storage
-    ├── job_copilot.py         # Rule-based triage, retrieval, drafts, and job logging
-    ├── ingest_companies.py   # Validated company inventory upsert utility
-    ├── run_rag_session.ps1   # Optional managed Ollama query session on Windows
-    ├── rag_matcher.py         # Local hybrid evidence retrieval CLI and SQLite cache
-    ├── RAG_MATCHER_GUIDE.md   # Local model setup and usage
-    ├── templates/
-    │   └── evidence.html      # Evidence dossier page and navigation
-    ├── requirements.txt       # Runtime dependencies
-    ├── .gitignore             # Excludes local data and environment files
-    └── tests/                 # Automated unit checks
+├── app.py             # FastAPI UI and API routes
+├── database.py        # SQLite schemas, additive migration, and analytics
+├── evidence.py        # Validated evidence claim persistence
+├── matcher.py         # Transparent profile scan and bridge drafts
+├── rag_matcher.py     # Local lexical + semantic evidence retrieval
+├── job_copilot.py     # Job triage, managed RAG call, and role persistence
+├── ingest_companies.py# Validated company inventory upsert
+├── tracker.py         # Tracker filters, guarded states, and exports
+├── templates/         # Jinja2 evidence and tracker views
+└── tests/             # Local unit tests
 ```
 
-The SQLite database, Python virtual environment, and bytecode are local files and are excluded from Git. The checked-in seed profile is generic sample data. Edit the seed values before initializing a fresh database, or update your existing local database using your own trusted workflow. Do not commit personal profile data or the generated database.
+> **Current checkout note:** `job_copilot.py` expects `run_rag_session.ps1` in `jobgs-engine`, but that script is not present in this checkout. Until it is restored and reviewed, `/api/triage-job` and `/api/add-job` cannot complete their managed hybrid-RAG path; they should return a clear service error. The standalone `rag_matcher.py` CLI can be run separately when Ollama is started manually. Documentation does not treat this missing file as a passing lifecycle test.
 
 ## Run locally on Windows
 
-Open PowerShell at the repository root, then run:
+From the repository root, use PowerShell:
 
 ```powershell
 Set-Location "projects\JobG's\jobgs-engine"
@@ -79,36 +117,46 @@ python database.py
 python app.py
 ```
 
-Open <http://127.0.0.1:8000/> in your browser. Keep the terminal open while using the app; press **Ctrl+C** to stop the server.
+Open <http://127.0.0.1:8000/>. The web server is intended to bind to loopback for local use; stop it with **Ctrl+C**. API documentation is at <http://127.0.0.1:8000/docs>.
 
-`database.py` creates the tables and seeds a generic profile only when the profile table is empty. Changing the seed values later will not overwrite an existing database. The SQLite database path is resolved beside database.py inside jobgs-engine. Run commands from that folder so templates and other relative project resources resolve consistently.
+The setup command creates a virtual environment and the local SQLite database. The database file, resumes, evidence text, embedding cache, Ollama model files, and secrets must stay out of Git. The application has no login and SQLite is not encrypted; local-first is a data-flow choice, not an encryption or access-control guarantee.
 
-## Verify locally
+## Local retrieval
 
-From `jobgs-engine` with the virtual environment active:
-
-```powershell
-python -m unittest discover -s tests -v
-python -m compileall -q app.py database.py matcher.py evidence.py evidence_profile.py rag_matcher.py job_copilot.py ingest_companies.py
-```
-
-GitHub Actions runs these checks for pull requests and pushes that change this project. The Ollama retrieval smoke test is optional because it requires Ollama and a local model to be installed.
-
-To try local retrieval from `jobgs-engine`, install Ollama separately, pull its embedding model, and run:
+Install Ollama separately and download the embedding model once:
 
 ```powershell
 ollama pull nomic-embed-text
-python rag_matcher.py "cloud data platform architecture and BI modernization" --persona Architect
+ollama serve
 ```
 
-The first command downloads model files to your PC. The Python code sends embedding requests to Ollama on loopback; it does not call a hosted inference API. The vector cache is derived from SQLite evidence and can be rebuilt. See the [retrieval guide](jobgs-engine/RAG_MATCHER_GUIDE.md).
+In another terminal, from `jobgs-engine`:
 
-## Git and release workflow
+```powershell
+python rag_matcher.py "cloud data platform architecture" --persona Architect
+python rag_matcher.py "multi-cloud transformation" --keywords-only
+```
 
-Use a short-lived branch for each change, then open a pull request into main. Review the diff and wait for the JobG's CI workflow to pass before merging. For a release tag, tag the verified merge commit on main; do not move an existing published tag.
+The first command uses hybrid retrieval only if the local Ollama API is available; otherwise it reports lexical fallback. Stop a manually started server using the Ollama app/service controls or the terminal running it. API job triage is stricter: it requires the managed wrapper described in the checkout note above and rejects fallback output.
 
-The Week 2 implementation was merged by PR #9. The five checks on merge commit a04bcbc passed (build, Python 3.12, Python 3.14, deploy workflow, and report-build-status). The corrective tag v1.4.1 points to that merge commit; the earlier v1.4 tag remains unchanged and is not the Week 2 release target.
+## Tests and CI
 
-See CHANGELOG.md for release scope and verification notes. A Git tag is distinct from a published GitHub Release entry. Generative resume rewriting, job-site scraping, autonomous agents, and form automation are not included in this release.
+Run the local unit suite from `jobgs-engine`:
 
-For the learning plan, see the 24-week AI engineering roadmap, including the Week 1 retrieval and Week 2 co-pilot milestones.
+```powershell
+python -m unittest discover -s tests -v
+```
+
+The repository currently contains 34 test methods across evidence, job workflow, retrieval, bridges, and tracker modules. Run the command above to verify the current environment; this README does not claim a fresh test run. GitHub Actions also runs the configured project checks on pull requests.
+
+## Documentation and release history
+
+- [Product overview and architecture](PRODUCT_OVERVIEW.md)
+- [Week 1 milestone](docs/Week-1-Milestone.md)
+- [Week 2 milestone](docs/Week-2-Milestone.md)
+- [Week 3 milestone](docs/Week-3-Milestone.md)
+- [Week 4 milestone / v1.6](docs/Week-4-Milestone.md)
+- [Changelog](CHANGELOG.md)
+- [GitHub Wiki](https://github.com/raulkbd101-ai/AI-ProjectsAKR/wiki)
+
+The `v1.6` tag represents the completed four-week MVP milestone. The long-term roadmap continues beyond this release; “MVP complete” does not mean autonomous applications, hosted deployment, or a commercial product are complete.

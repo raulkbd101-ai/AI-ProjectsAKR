@@ -1,14 +1,19 @@
-from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
-from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 from pathlib import Path
 import sqlite3
 import uuid
 from datetime import date
+from typing import Annotated
+
+from fastapi import Body, FastAPI, Form, HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
+from pydantic import ValidationError
+
 from database import DB_FILE, check_daily_limit
 from matcher import evaluate_job_match
 from evidence import list_evidence_claims, add_evidence_claim, EvidenceClaim
-from pydantic import ValidationError
+from job_copilot import JobSubmission, ManagedRagError, add_job, triage_job
+from ingest_companies import CompanyRecord, ingest_company_records
 
 app = FastAPI(title="JobG's - Personal Job Search Assistant")
 TEMPLATE_ENV = Environment(
@@ -276,6 +281,69 @@ def post_evidence_claim(
         return RedirectResponse(url="/evidence?error=invalid_claim", status_code=303)
     except (sqlite3.Error, ValueError):
         return RedirectResponse(url="/evidence?error=save_failed", status_code=303)
+
+
+# --- WEEK 2 EXECUTIVE DECISION CO-PILOT API ---
+
+@app.post("/api/triage-job")
+def api_triage_job(job: JobSubmission):
+    """Analyze a user-supplied role without saving it or submitting an application."""
+    try:
+        return triage_job(job)
+    except ManagedRagError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except (sqlite3.Error, OSError) as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Local job/evidence data could not be read. Confirm the database is initialized.",
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/api/add-job")
+def api_add_job(job: JobSubmission):
+    """Triage and save a discovered job for human review; does not apply or message."""
+    try:
+        return add_job(job)
+    except ManagedRagError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except sqlite3.IntegrityError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="The job could not be saved because it conflicts with an existing record.",
+        ) from exc
+    except sqlite3.Error as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="The local database is unavailable. Confirm it is initialized and writable.",
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/api/ingest-companies")
+def api_ingest_companies(
+    companies: Annotated[
+        list[CompanyRecord],
+        Body(min_length=1, max_length=250),
+    ],
+):
+    """Bulk-upsert company records; this does not submit applications or messages."""
+    try:
+        count = ingest_company_records(companies)
+        return {
+            "success": True,
+            "records_upserted": count,
+            "message": f"Processed {count} company record(s).",
+        }
+    except sqlite3.Error as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="The local company inventory database is unavailable.",
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 if __name__ == "__main__":
     import uvicorn

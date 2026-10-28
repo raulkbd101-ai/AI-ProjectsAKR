@@ -45,6 +45,10 @@ Run `python database.py` first to create the new table. Then run the example fro
 
 Pydantic checks the shape of the information before it is saved. For example, it requires a competency, claim, and evidence note; limits how long each field can be; and rejects unknown status values. This is input validation. It does **not** fact-check the candidate's statement.
 
-## Next step
+## How JobG's uses the dossier today
 
-Once the candidate has reviewed and entered accurate claims, a future AI analysis can return each strength or gap with the IDs of supporting claims—or say that it has insufficient evidence. The AI should not upgrade a self-reported claim into an independently verified fact.
+The local retrieval module can rank eligible claims for a query and return their evidence IDs, persona scope, self-reported status, source reference, and relevance indicators. The Week 2 triage flow can show these retrieved claims alongside a manually supplied job description. This is retrieval, not an AI-generated assessment: semantic similarity does not prove that the candidate has a requirement or that the claim is true.
+
+Transferable technology bridge drafts are generated only when a compatible, non-confidential claim supports the source technology and persona. Review both the claim and any bridge wording before reuse. Do not treat the bridge as proof of direct experience with a target tool.
+
+Future model-assisted analysis should cite saved evidence IDs for candidate-specific strengths and mark unsupported items unknown. It must not upgrade a self-reported claim into independently verified fact.

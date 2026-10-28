@@ -1,135 +1,89 @@
-# Changelog
+# JobG's Changelog
 
-All notable JobG's changes are recorded here. Existing tags are preserved as published; planned releases use Semantic Versioning.
+Release notes for the personal JobG's MVP. The tags listed below are historical references and should not be moved or overwritten. The current completed MVP release is `v1.6`.
 
-## [Unreleased] — proposed v1.6
-
-### Added — Week 4 dashboard and tracker
-
-- Local SQLite-backed tracker page with persona, domain, status, keyword, profile-coverage, and RAG-relevance filters.
-- Human-governed lifecycle transitions using `DISCOVERED`, `USER_REVIEWED`, `APPLIED`, `INTERVIEWING`, `OFFER`, `REJECTED`, `WITHDRAWN`, and terminal `ARCHIVED` states.
-- Dashboard analytics for tracked roles, active outreach drafts, current status counts, current-status snapshot ratios, and progress against the 10-role daily logging cap.
-- Markdown and JSON offline exports for tracked roles, saved evidence matches, bridge drafts, and outreach drafts. Confidential evidence claim text is redacted.
-- Additive SQLite migration preserves tracked roles, adds nullable profile-term coverage, and maps older `REVIEWED`/`INTERVIEW` states to `USER_REVIEWED`/`INTERVIEWING`.
-- Automated tracker tests cover lifecycle guards, filters, reporting, exports, and legacy database migration.
-
-### Governance notes
-
-- Daily cap measures roles the user logged after review; it does not verify external application submission.
-- RAG relevance and profile keyword coverage are separate retrieval indicators, not a calibrated job-fit or hiring-probability score.
-- Stage ratios are based on current status snapshots. Historical funnel conversion requires a status-history table.
-- JobG's stores outreach drafts but does not send messages or submit applications.
-
-## [Unreleased] — proposed v1.5
+## [v1.6] — Week 4 dashboard, lifecycle, analytics, and exports
 
 ### Added
 
-- Persona-weighted evidence ranking for Director, Architect, and TPM, with the original retrieval score retained and persona signals exposed for review.
-- Evidence-grounded transferable technology bridges for cloud, data-platform, and legacy modernization concepts. Drafts include supporting SQLite claim provenance and explicit conceptual-adjacency disclaimers.
-- Bridge coverage for 26 unit tests across persona ranking, evidence requirements, persona scope, expanded technology mappings, and existing workflows.
+- SQLite-backed tracker with guarded lifecycle transitions through `DISCOVERED`, `USER_REVIEWED`, `APPLIED`, `INTERVIEWING`, `OFFER`, `REJECTED`, `WITHDRAWN`, and `ARCHIVED`.
+- Filters for persona, domain, status, search term, literal profile coverage, and best saved RAG relevance, plus supported sort orders.
+- Dashboard summaries for tracked roles, active outreach drafts, status counts, and progress toward the 10-role daily logging cap.
+- Markdown and JSON offline exports containing role details, evidence matches, bridge drafts, and outreach drafts; confidential evidence claim text is redacted.
+- Additive SQLite migration for tracker coverage and lifecycle state compatibility.
 
-### Guardrails
+### Interpretation and boundaries
 
-- Bridge drafts are emitted only when eligible, non-confidential profile evidence explicitly supports the mapped source technology.
-- No bridge claims direct hands-on production use of a target technology; human review remains required.
+- The daily cap counts roles logged in JobG's; it does not establish that an external application was submitted.
+- Profile-term coverage and evidence retrieval relevance are separate indicators, not job-fit, ATS passage, proficiency, or hiring-probability scores.
+- Dashboard ratios reflect current status snapshots. The application does not maintain a historical status-transition event log, so these are not cohort conversion rates.
+- JobG's prepares drafts and exports but does not submit applications or send messages.
+- **Current-checkout issue:** `job_copilot.py` expects `run_rag_session.ps1` for managed Ollama startup and teardown, but the script is absent from this repository checkout. The API's triage/add routes cannot complete their required hybrid-RAG path until that dependency is restored and verified.
 
 ### Verification
 
-- Local Windows unit test suite: 26 tests passed.
+- The local suite was recorded as 34 passing test methods at the Week 4 milestone. Re-run `python -m unittest discover -s tests -v` in the current checkout for a fresh verification.
+- GitHub tag `v1.6` points to the merged Week 4 release commit.
 
-## [1.3.0] — local hybrid retrieval
+## [v1.5] — Week 3 persona weighting and evidence-grounded bridges
 
 ### Added
 
-- Standalone `rag_matcher.py` prototype that retrieves candidate-authored evidence by combining lexical overlap with local Ollama embeddings.
-- Rebuildable `evidence_embeddings` cache in SQLite, keyed by evidence row and model; `profile_evidence` remains the source of truth.
-- Persona-aware retrieval, confidential-claim exclusion by default, and a keyword-only fallback when local embeddings are unavailable.
-- Retrieval guide, 24-week AI learning roadmap, and documentation spaces for architecture decisions and sanitized evaluations.
-- Unit coverage for persona filtering, confidential-claim exclusion, hybrid-score composition, vector-cache persistence, and model-unavailable fallback.
-
-### Scope and limitations
-
-- The retrieval prototype is a CLI module and is not integrated into the FastAPI dashboard.
-- It does not generate a RAG narrative, assess job fit, rewrite resumes, scrape job boards, or submit applications.
-- Ollama model files must be downloaded once. Runtime embedding requests use the local loopback service; no hosted inference API is configured.
-- Retrieval scores indicate evidence-search relevance only, not claim truth, candidate proficiency, hiring likelihood, or job fit.
-- `v1.2` remains an existing tag for the evidence dossier and persona-aware transferable bridge foundation. Do not move or overwrite that tag.
+- Persona-adjusted evidence ordering for Director, Architect, and TPM while preserving the base retrieval score and exposing ranking signals.
+- Allowlisted conceptual technology bridges across cloud, data, and legacy modernization domains.
+- Bridge eligibility checks requiring a non-confidential, persona-compatible SQLite claim that explicitly supports the mapped source technology.
+- Bridge results carry evidence provenance and a clear conceptual-adjacency disclaimer.
 
 ### Verification
 
-- Local Python 3.14 checks: all 23 unit tests pass; the retrieval tests use a temporary SQLite database and mocked embedding responses.
-- The CI syntax step now includes `rag_matcher.py` and the evidence modules.
-- Keep the Ollama-dependent smoke command optional; CI does not download model weights or call Ollama.
+- Week 3 milestone record: 26 local unit tests passed.
 
-### Commit note
-
-```text
-feat(jobgs): add local hybrid evidence retrieval prototype
-```
-
-## [1.2] — tagged evidence and bridge foundation
-
-- Added persona-specific evidence claims and reviewable, evidence-supported transferable technology bridge drafts.
-- Kept claims candidate-provided and human-reviewed; the bridge drafts do not claim direct experience with an adjacent target technology.
-
-## [1.1.0] — 2026-10-27
-
-First learning-focused update after the local v1.0 release. This is still a personal, local MVP; it is not an autonomous or public job application service.
+## [v1.4.1] — Week 2 executive triage and SQLite inventory
 
 ### Added
 
-- Pydantic `EvidenceClaim` model with required-field, length, and allowed-value validation.
-- Local SQLite `profile_evidence` table linked to the master profile, plus helpers for saving and listing claims.
-- Evidence profile guide, two-week MVP learning plan, and release notes for future maintainers and the learner.
+- `companies_inventory` for on-demand company facts and `application_tracker` for supplied job opportunities.
+- `/api/triage-job` for a non-persisting preview and `/api/add-job` for human-review intake with a `DISCOVERED` state.
+- Rule-based suggestions for persona, domain, and work model/location, plus evidence retrieval, conceptual bridge drafts, and outreach drafts.
+- Validated batch company upserts through the `ingest_companies.py` module and `/api/ingest-companies` endpoint.
 
-### Changed
+### Boundaries
 
-- Replaced the arbitrary heuristic fit percentage and 90% approval gate with a transparent count of profile skill terms explicitly mentioned in the JD.
-- Showed matched skills, profile skills not mentioned, and explicitly matched domains.
-- Removed unsupported claims about ATS outcomes and automatic mastery of missing tools; role logging now follows the candidate's own review.
-- Clarified in the UI that term coverage is not job fit, proficiency, or hiring probability.
-- Documented that evidence labels are self-reported and do not constitute independent verification; no personal claims or sample metrics were seeded.
+- Job URLs and descriptions are supplied by the candidate; this is not a career-site crawler.
+- API intake does not apply or message. The candidate must review the result and act externally.
+- `/api/triage-job` and `/api/add-job` require successful managed hybrid retrieval; lexical fallback is not accepted for these endpoints.
 
-### Verification
-
-- Local Windows run: database initialized and reported the existing master profile without replacing it.
-- Final local workflow checks: 7 tests passed, including evidence-claim validation, save/list behavior, profile-term reporting, and candidate-selected role logging.
-- The first evidence-test run surfaced a Windows console encoding issue in test setup output; the setup output was captured, then all 7 checks passed.
-- Syntax compilation completed for the app, database, matcher, evidence model, and test files.
-
-### Commit note
-
-Suggested commit message:
-
-```text
-feat(jobgs): add evidence profile foundation for v1.1.0
-```
-
-## [1.0.0] — 2026-10-25
-
-First local MVP release.
+## [v1.3.0] — local hybrid evidence retrieval
 
 ### Added
 
-- FastAPI form for entering a company, role, job URL, and job description.
-- Rule-based profile matching with a reviewable score and matched competencies.
-- Server-side, one-time evaluation tokens so the confirmation form refers to the evaluation shown to the user.
-- SQLite profile and approved-opportunity log, with a daily maximum of 10 entries.
-- Generic starter profile, setup instructions, and GitHub Actions CI checks.
+- Standalone `rag_matcher.py` using 65% local embedding similarity and 35% lexical overlap when semantic retrieval is available.
+- Local Ollama `nomic-embed-text` embedding requests and a rebuildable SQLite `evidence_embeddings` cache; `profile_evidence` remains the source of truth.
+- Persona filtering, confidentiality exclusion by default, and explicit lexical fallback behavior for the standalone retrieval command.
 
-### Scope
+### Boundaries
 
-- Job descriptions are entered manually.
-- Confirmation logs an opportunity locally; it does not submit an application.
-- Match scores are heuristic and should not be interpreted as calibrated fit or ATS success probabilities.
-- The app is intended for local, single-user use.
+- Retrieval results rank evidence relevance only; they do not establish truth, proficiency, fit, or hiring probability.
+- The module retrieves evidence; it is not a generative RAG resume writer.
 
-### Commit summary
+## [v1.2] — evidence dossier and persona-tagged bridge foundation
 
-Suggested release commit message:
+- Added structured candidate-authored evidence claims with persona tags, source notes, evidence status, and confidentiality metadata.
+- Added initial reviewable transferable technology bridge support.
+- Claims remain self-reported; confidentiality labels do not encrypt or restrict access to local SQLite data.
 
-```text
-feat(jobgs): release local job-search workflow v1.0.0
-```
+## [v1.1.0] — explainable profile-term workflow
 
-Release contents: local FastAPI UI, SQLite persistence, heuristic matcher, review-and-confirm flow, dependency manifest, automated CI checks, and user/developer documentation.
+- Added validated evidence-profile storage and a guide for entering supportable candidate claims.
+- Replaced the arbitrary heuristic 90% approval gate with a transparent profile-term scan and user-selected role logging.
+- Clarified that literal keyword coverage does not estimate job fit, ATS success, or interview likelihood.
+
+## [v1.0.0] — local single-user foundation
+
+- Added a FastAPI form to enter a company, role, optional job URL, and job description.
+- Added a SQLite profile and local role log with a 10-entry daily cap and a review-before-log flow.
+- Added a generic starter profile and initial CI checks.
+
+## Version and release note
+
+The repository also contains an earlier `v1.4` tag associated with release preparation. `v1.4.1` is the release tag associated with the merged Week 2 executive triage and inventory implementation. Tags are immutable historical references; do not retarget an existing tag to make the numbering appear linear.

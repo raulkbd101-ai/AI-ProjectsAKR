@@ -1,5 +1,9 @@
 # Amith Raul | AI and Platform Engineering Portfolio
 
+## Copyright and use
+
+Copyright (c) 2026 Amith Raul. All rights reserved. The portfolio and original project materials are protected by copyright. Unless a separate written license or permission says otherwise, reuse is not granted. Each project folder contains its applicable `LICENSE` notice. This notice does not automatically detect copying; public GitHub repositories can still be viewed and forked under GitHub's terms.
+
 This repository contains practical, small-scale examples of enterprise AI and platform patterns. Each project is built so a reviewer can run it, inspect the design, and understand the tradeoffs.
 
 ## Portfolio website
@@ -7,12 +11,22 @@ This repository contains practical, small-scale examples of enterprise AI and pl
 - [Static portfolio home page source](docs/index.html)
 - [Delivery and learning story](docs/delivery-story.html)
 - [Shared website styles](docs/styles.css)
+- [Experienced job-search guide for technology professionals with 10+ years](docs/experienced-job-search.html)
 
 The portfolio site is published with GitHub Pages from this public repository's `main` branch and `/docs` folder: [Open the portfolio](https://raulkbd101-ai.github.io/AI-ProjectsAKR/). The Python-backed project demos remain runnable locally from their linked READMEs; GitHub Pages serves the static portfolio pages.
 
 [GitHub Pages is available for public repositories on GitHub Free](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site), and [does not support server-side Python](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site).
 
 ## Projects
+
+### JobG's — Personal Executive Job-Search Assistant
+
+A personal local-first MVP built to reduce repeated role review, evidence lookup, application preparation, and tracking work in a manual executive job search. It supports three resume personas, local evidence retrieval, guarded bridge drafts, lifecycle tracking, analytics, and offline exports. It does not promise ATS passage, submit applications, or send outreach.
+
+- [Product overview and local setup](projects/JobG's/README.md)
+- [Architecture, workflow, and product boundaries](projects/JobG's/PRODUCT_OVERVIEW.md)
+- [Week 1–4 milestone notes](projects/JobG's/docs/)
+- [Release history through v1.6](projects/JobG's/CHANGELOG.md)
 
 ### Governed Agentic BI Demo
 

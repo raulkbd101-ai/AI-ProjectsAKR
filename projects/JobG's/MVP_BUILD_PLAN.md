@@ -1,53 +1,71 @@
-# JobG's personal MVP build plan
+# JobG's MVP Scope and Delivery Record
 
-## Goal
+## Product problem
 
-Build a private, local-first job-search assistant that helps one candidate discover or import roles, understand how their experience maps to each role, prepare truthful application materials, and track decisions. The candidate reviews every recommendation and submits every application manually.
+The motivating workflow is a candidate's repeated, manual effort to research a role, compare it with a selected resume persona, locate supportable evidence, prepare application notes, submit through an external portal, and update a tracker. The candidate estimates this can take about 50 minutes per application. JobG's was built to reduce duplicated preparation and recordkeeping—not to automate the external application or guarantee an ATS outcome.
 
-This is a focused two-week learning sprint, not a promise to cover every current AI technology or to launch a public multi-user service. ChatGPT and Gemini can explain concepts, review design choices, and quiz the learner. Using either chat product does not by itself connect the JobG app to a model; an app integration would require choosing a model API and handling its key, cost, privacy, and data-sharing behavior separately.
+The 50-minute estimate is a problem statement, not an independently measured baseline or a proven time-saving result. Measuring task time and candidate corrections is a future evaluation item.
 
-## Product boundaries
+## Intended MVP outcome
 
-- Personal, single-user use first; local profile and job data stay on the PC by default.
-- Support jobs globally by letting the user paste or import a job description and record its country, location, currency, source, and date. Global scraping is out of the first working slice.
-- No automatic applications, messages, or account actions.
-- Never invent candidate qualifications, employment history, metrics, or evidence.
-- A numeric score is only useful if its meaning and limitations are visible. The current baseline reports exact profile terms found in a JD; it is not a fit probability.
-- Review each job source's permitted access and data terms before adding automated collection.
+Deliver a personal, local-first tool that helps one candidate:
 
-## Current starting point
+1. Maintain a structured, candidate-authored evidence dossier across Director, Architect, and TPM resume tracks.
+2. Supply role details and job-description text manually, then receive explainable persona, domain, and location suggestions.
+3. Retrieve related evidence locally, see evidence-supported conceptual technology bridges, and review an outreach draft.
+4. Save a role for human review, track its lifecycle, filter and prioritize the backlog, review activity, and export records offline.
+5. Submit applications and contact people manually outside JobG's.
 
-Version 1.0 is a local FastAPI and SQLite application. This 1.1 development branch has started replacing its misleading 90% keyword gate with a transparent profile-term scan. This baseline gives us something understandable to compare with later AI-assisted results.
+## Delivered in v1.6 (Weeks 1–4)
 
-## Two-week learning path
-
-| Sprint | Build outcome | Concepts to learn and explain back |
+| Week | Delivered capability | Learning concepts practiced |
 |---|---|---|
-| Days 1–2 | Clean local setup, branch, README, baseline scan, and review workflow | Python modules, virtual environments, SQLite, Git branches, commits, pull requests, HTTP forms |
-| Days 3–4 | A provider-independent AI analysis interface that accepts a JD and profile evidence | API requests, secrets, JSON schemas/structured output, latency, token/cost estimates |
-| Days 5–6 | Evidence-linked role analysis with strengths, gaps, and unknowns | Retrieval, embeddings vs. keyword search, grounding, prompt injection, privacy boundaries |
-| Day 7 | Small labeled examples for checking matcher quality and regressions | Evaluation sets, precision/recall tradeoffs, human review, reproducibility |
-| Days 8–9 | Candidate-approved resume summary and cover-note drafts tied to supplied facts | Constrained generation, provenance, factuality checks, document export |
-| Day 10 | Role records with country, location, currency, source, and status | Data modeling, validation, migrations, internationalization basics |
-| Days 11–12 | CI checks and a repeatable container or deployment rehearsal | GitHub Actions, dependency pinning, Docker concepts, environment configuration |
-| Days 13–14 | End-to-end review, cost/privacy notes, version 1.1 notes, and interview walkthrough | Threat modeling, observability, tradeoffs, release/tagging, explaining architecture |
+| 1 | SQLite evidence foundation and local lexical/embedding retrieval prototype | Data modeling, embeddings, vector similarity, local inference, retrieval versus generation |
+| 2 | Company inventory, job intake APIs, rule-based triage, role persistence, evidence/bridge/outreach drafts | API validation, upserts, idempotency, relational data, human approval boundary |
+| 3 | Persona-weighted evidence ranking and claim-gated transferable technology bridges | Ranking, evidence provenance, relevance weighting, factuality guardrails |
+| 4 | Tracker lifecycle, filters, dashboard metrics, daily logging cap, Markdown/JSON export | State machines, SQL filters, analytics, privacy-aware export, CI/release workflow |
 
-## Build order and acceptance checks
+Release `v1.6` closes the initial four-week MVP milestone. This is not a standalone public SaaS product, multi-user service, or autonomous job-submission bot. The 24-week learning roadmap continues beyond the MVP.
 
-1. **Explainable baseline** (started): the screen calls its number profile-term coverage, lists exact terms found and absent, never blocks a candidate based on an arbitrary percentage, and asks the user to review before logging.
-2. **Profile evidence**: store editable candidate facts and optional source references privately. An AI answer must point back to supplied evidence or mark the item unknown.
-3. **AI analysis**: define a provider interface and strict response schema; call one chosen model only after checking cost, API-key handling, retention, and consent. Keep provider-specific code behind the interface.
-4. **Evaluation**: compare baseline and AI analysis on a small, manually reviewed set of representative jobs. Do not claim a calibrated score without enough labeled data.
-5. **Drafts and tracking**: make drafts editable, preserve original text, and require the user to confirm before saving application status.
-6. **CI and release**: run checks on pull requests, review the diff, document known limits, then publish a tagged release. No secrets, personal profile, resume, or SQLite database in Git.
+## Product and safety boundaries
 
-## Learning routine
+- Personal/single-user local use. SQLite is not encrypted and the app has no login; run only on a trusted PC and keep the server on loopback.
+- Candidate facts are self-reported. A source reference or status label does not independently verify the claim.
+- Similarity and keyword measures describe retrieval/coverage only. They are not fit probabilities or hiring predictions.
+- The application receives manually supplied role information. It does not scrape company portals or bypass access controls.
+- Bridge drafts describe conceptual adjacency and are returned only with eligible source evidence; they never imply direct experience with a target tool unless the dossier supports that exact claim.
+- No application submission, external account action, or outreach delivery is automated.
+- Local embeddings avoid sending profile text to a hosted embedding service, but Ollama model downloads, local compute, disk, and electricity still have costs.
+- Never commit personal resumes, sensitive job descriptions, SQLite files, embedding caches, secrets, or confidential company material.
 
-For each change, ask ChatGPT and Gemini to explain one concept in plain language, predict the behavior before running it, and then compare their explanation with the code and observed output. Keep a short note of: **what changed, why, how it works, what could fail, and how to explain the tradeoff in an interview**. Do not paste private profile data or API keys into either service.
+## Run and verify
 
-## Explicitly out of scope for this sprint
+From the project root in PowerShell:
 
-- A public SaaS launch, multi-user accounts, or storing other people's resumes.
-- Blind scraping or bypassing job-site access controls.
-- Automatic application submission or fabricated resume content.
-- Trying to implement every AI trend (agents, fine-tuning, multimodal models, and vector databases are not all required for this MVP).
+```powershell
+Set-Location "jobgs-engine"
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python database.py
+python -m unittest discover -s tests -v
+python app.py
+```
+
+Open <http://127.0.0.1:8000/>. Local hybrid RAG CLI usage and Ollama setup are described in [RAG_MATCHER_GUIDE.md](jobgs-engine/RAG_MATCHER_GUIDE.md).
+
+### Current checkout limitation
+
+The job-copilot API imports and invokes `jobgs-engine/run_rag_session.ps1` to manage Ollama and requires `retrieval_mode="hybrid"`. That PowerShell script is absent from this checkout. Consequently, the intake API cannot complete as documented until the wrapper is restored and verified. This is a known implementation/release-readiness gap, not a documentation-only issue.
+
+## Suggested measurement plan
+
+For a future, privacy-safe evaluation, use a small set of manually selected roles and record:
+
+- minutes spent on role review and application preparation with and without JobG's;
+- whether the suggested persona was accepted or changed;
+- whether retrieved evidence was relevant, missed, or misleading;
+- the number of candidate edits required to bridge/outreach drafts;
+- whether the candidate found an unsupported claim (target: zero unsupported claims reused).
+
+Do not publish a productivity or ATS-rejection improvement claim until there is a repeatable comparison with a documented sample and method.

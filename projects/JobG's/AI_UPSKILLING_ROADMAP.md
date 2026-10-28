@@ -2,128 +2,89 @@
 
 ## Purpose
 
-Use JobG's as a personal, local-first project for learning applied AI engineering while improving an executive job-search workflow. Each phase should produce a working, reviewable deliverable and a short learning note that explains the design, trade-offs, limitations, and how to discuss the work in an interview.
+Use JobG's as a personal, local-first project for learning applied AI and platform engineering while improving a demanding executive job-search workflow. Each milestone should produce a reviewable deliverable and a learning note explaining what changed, how it works, its trade-offs, and what remains unproven.
 
-This is a 24-week learning roadmap, not a commitment to ship a public autonomous job-application service. The user remains the decision maker: generated assessments and application materials require review, and the app does not submit applications automatically.
+The initial four-week MVP is complete and tagged `v1.6`. The remaining roadmap is a learning plan, not a promise to launch a public autonomous job-application service. The candidate remains responsible for decisions, application content, and every external submission or message.
 
-## Starting point
+## Starting point at v1.6
 
-The current engine is a local FastAPI application backed by SQLite. It has a manually entered job-description workflow, a transparent literal profile-term scan, a daily role-log limit, and a candidate-authored evidence dossier. The current scan is not an AI fit score. Evidence is self-reported and is not independently verified. Local-first reduces unnecessary data sharing but does not itself encrypt the database or protect it from other users of the PC.
+The local FastAPI app uses SQLite for profile evidence, company inventory, and tracked roles. It supports manually supplied job details, rule-based triage suggestions, local hybrid evidence retrieval, persona-weighted ranking, evidence-gated bridge drafts, a reviewable tracker, activity summaries, and offline exports.
 
-The existing [MVP build plan](MVP_BUILD_PLAN.md) remains the short-term baseline. This roadmap layers a longer learning path on top without replacing that plan.
+The 50-minute-per-application estimate motivates the product but has not yet been evaluated as a measured baseline or validated time saving. The app cannot promise ATS passage or prevent rejection. Its scores are retrieval relevance and literal keyword coverage, not job-fit probabilities.
 
-The Week 1 local retrieval prototype is documented in [RAG_MATCHER_GUIDE.md](jobgs-engine/RAG_MATCHER_GUIDE.md); it is a standalone module and has not yet been wired into the FastAPI screen.
+**Known implementation gap:** the current checkout's job intake API calls `run_rag_session.ps1`, but this wrapper is absent from the repository. Restore and test it before claiming the API-managed Ollama workflow works in a fresh clone. See the [product overview](PRODUCT_OVERVIEW.md).
 
 ## 24-week outline
 
-| Phase | Weeks | Learning focus | JobG's deliverable |
-|---|---:|---|---|
-| 1. Local retrieval & RAG | 1–4 | Text preparation, chunking, embeddings, vector search, retrieval evaluation, grounded generation | Search profile evidence by meaning and return evidence-linked, human-reviewed role analysis |
-| 2. Structured AI workflows | 5–8 | Model API boundaries, structured output, prompt design, validation, retries, cost and latency measurement | Provider-independent analysis service producing validated strengths, gaps, unknowns, and evidence references |
-| 3. Agentic workflows | 9–12 | Tool calling, workflow state, bounded agents, approvals, idempotency, auditability | A supervised workflow that can organize imported roles and prepare drafts, with explicit user approval gates |
-| 4. MCP and interoperability | 13–16 | MCP concepts, tool/resource boundaries, authentication, least privilege, threat modeling | A local, read-limited MCP interface for approved JobG's data, initially disabled by default |
-| 5. Cloud, governance & FinOps | 17–20 | Containerization, cloud deployment patterns across GCP/AWS/Azure, secrets, observability, privacy, cost controls | A deployment rehearsal and architecture decision record; retain local mode as the default |
-| 6. Autonomous execution & portfolio | 21–24 | Permitted discovery sources, queueing, evaluations, reliability, governance, release communication | A controlled discovery and preparation workflow; all external actions remain explicitly reviewed |
+| Phase | Weeks | Status | Learning focus | Potential deliverable |
+|---|---:|---|---|---|
+| 1. Local retrieval foundation | 1–4 | **Completed — v1.6 MVP** | Evidence modeling, lexical search, embeddings, retrieval ranking, personas, human review | Local retrieval, triage, tracker, and exports |
+| 2. Structured AI workflows | 5–8 | Planned | Model boundaries, structured output, prompt design, validation, retries, cost and latency | Optional evidence-grounded analysis service with schema validation |
+| 3. Supervised agentic workflows | 9–12 | Planned | Tool calling, bounded workflows, approvals, idempotency, auditability | Supervised preparation workflow; no unattended external actions |
+| 4. MCP and interoperability | 13–16 | Planned | MCP tools/resources, least privilege, authentication, threat modeling | Local read-limited MCP interface, disabled by default |
+| 5. Cloud, governance, and FinOps | 17–20 | Planned | Containers, deployment patterns, secrets, observability, privacy, cost controls | Deployment rehearsal and architecture decision record; local mode stays available |
+| 6. Evaluation and portfolio | 21–24 | Planned | Permitted discovery, evaluation, reliability, governance, release communication | Measured, bounded preparation workflow and portfolio walkthrough |
 
-## Weeks 1–4 curriculum
+## Completed learning record: Weeks 1–4
 
-### Week 1 — Retrieval foundations and data boundaries
+### Week 1 — Evidence store and local retrieval
 
-**Learn:** lexical search versus semantic search; what an embedding represents; why retrieved context can be incomplete or irrelevant; local data and privacy boundaries.
+**Delivered:** SQLite candidate evidence with persona scope, an Ollama `nomic-embed-text` embedding path, a derived vector cache, lexical-only fallback for the CLI, and a hybrid relevance rank when embeddings are available.
 
-**Build:** document the retrieval contract. Identify which candidate-authored evidence fields may be indexed, which must be excluded (for example secrets or confidential source documents), and what each search result must return (claim ID, persona, claim text, evidence summary, and source reference).
+**Learned:** embeddings encode text for similarity search; the vector cache is derived and rebuildable; retrieval finds potentially relevant claims but does not verify them or generate a narrative.
 
-**Deliverable:** `docs/adr/0001-local-rag-data-boundaries.md` or an equivalent short decision record, plus a small, synthetic evaluation set. Do not put real resume or confidential profile text in Git.
+### Week 2 — Intake and triage
 
-**Acceptance:** the user can explain what is indexed, where it is stored, how it can be rebuilt, and why retrieval is not proof that a claim is true.
+**Delivered:** company inventory and job tracker tables, `/api/triage-job` preview, `/api/add-job` save-for-review flow, rule-based persona/domain/location suggestions, and company record upserts based on user-supplied facts.
 
-### Week 2 — Local vector index prototype
+**Learned:** request validation, parameterized SQLite operations, upsert/idempotency patterns, lifecycle status, and human approval boundaries.
 
-**Learn:** chunking, embedding models, similarity search, metadata filters, and the difference between an embedding index and the source-of-truth database.
+### Week 3 — Dynamic personas and evidence-grounded bridges
 
-**Build:** prototype indexing only approved `profile_evidence` claims. Start with one claim per chunk rather than splitting short claims arbitrarily. Store each vector's evidence row ID, persona, and index/model version as metadata. Keep the vector index local and disposable.
+**Delivered:** persona-adjusted ranking for Director, Architect, and TPM; allowlisted conceptual technology mappings; bridge generation gated by a supporting, eligible, non-confidential SQLite claim; provenance and caveats in results.
 
-**Deliverable:** a small retrieval module behind an interface such as `search_evidence(query, persona, limit)`. Compare one local vector-store option with SQLite full-text search (FTS5) as a simpler baseline before selecting the implementation.
+**Learned:** ranking features, evidence provenance, and how to prevent semantic adjacency from being misrepresented as direct hands-on experience.
 
-**Acceptance:** exact and paraphrased queries return relevant claims; persona filters work; changing or deleting a source claim does not leave stale results after index rebuild.
+### Week 4 — Dashboard and workflow tracking
 
-### Week 3 — Retrieval evaluation and grounding
+**Delivered:** tracker status transitions, filters, current-state analytics, daily role-logging cap visualizer, and Markdown/JSON exports.
 
-**Learn:** retrieval precision/recall, top-k selection, metadata filtering, evidence provenance, and common failure modes (missed evidence, unrelated matches, duplicate claims).
+**Learned:** state transitions, query parameters, SQLite reporting, snapshot metrics versus historical conversion, and data minimization in exports.
 
-**Build:** label a small set of synthetic or sanitized queries with expected evidence IDs. Evaluate retrieval before adding a language model. Show retrieved claims and their provenance in the UI, and make an empty or weak retrieval result explicit.
+## Weeks 5–8 — Structured AI workflows (planned)
 
-**Deliverable:** a repeatable retrieval evaluation note and a retrieval panel or internal prototype. Keep the existing lexical scan available for comparison.
+- **Learn:** model-provider boundaries, structured outputs, prompt injection, retries, evaluation, token/cost/latency measurement.
+- **Build:** only after an explicit privacy and cost decision, add an optional provider adapter that accepts retrieved evidence and returns typed `strengths`, `gaps`, `unknowns`, and evidence IDs.
+- **Acceptance:** every candidate-specific strength cites a saved evidence ID; unsupported statements are marked unknown; malformed output fails closed; the candidate can edit or reject drafts.
+- **Do not claim:** an AI-generated fit score is calibrated unless it has a labeled evaluation set and documented methodology.
 
-**Acceptance:** reviewers can see why each claim was retrieved; irrelevant claims can be rejected; no result is presented as a candidate fact unless it comes from a saved claim.
+## Weeks 9–12 — Supervised agentic workflows (planned)
 
-### Week 4 — Grounded RAG analysis slice
+Explore bounded internal tool orchestration for organizing user-supplied roles and preparing drafts. Require explicit approval before any action that changes external systems. Design for retries, idempotency, cancellation, audit events, and a cost budget before adding tools.
 
-**Learn:** retrieval-augmented generation (RAG), context construction, structured responses, prompt injection in pasted job descriptions, and human review.
+## Weeks 13–16 — MCP and interoperability (planned)
 
-**Build:** add a narrow RAG path that retrieves evidence for a pasted job description and produces a structured draft: `strengths`, `gaps`, `unknowns`, and `evidence_ids`. Require evidence IDs for candidate-specific strengths. Treat the JD as untrusted input, never as instructions to the system. Do not generate or save a resume rewrite in this first slice.
+Prototype read-only tools/resources for approved local data. Start disabled by default, scope each operation, and document authentication, authorization, data exposure, and prompt-injection boundaries before connection to an external agent.
 
-**Deliverable:** a local, evidence-linked analysis preview with an explicit human-review step and a note comparing its output to the Week 3 retrieval results.
+## Weeks 17–20 — Deployment, governance, and FinOps (planned)
 
-**Acceptance:** output validates against a schema; every claimed strength points to an existing evidence ID; unsupported details are marked unknown; the user can reject or edit the draft; the baseline remains available if the model or index is unavailable.
+Rehearse containerization and a cloud deployment design without moving candidate data by default. Document secrets handling, encryption, access controls, backups, deletion, observability, resource limits, model costs, and rollback. Keep local operation as a viable mode.
 
-## Proposed integration architecture
+## Weeks 21–24 — Evaluation and portfolio (planned)
 
-```text
-FastAPI routes and templates
-        |
-        +-- Existing lexical matcher (baseline and fallback)
-        |
-        +-- RAG service (orchestrates retrieval and optional model call)
-                 |
-                 +-- Evidence repository: SQLite profile_evidence (source of truth)
-                 +-- Retrieval interface: SQLite FTS5 baseline / local vector index
-                 +-- Optional model provider adapter (added after evaluation)
-```
+Measure whether the tool reduces preparation time on a small, consented set of candidate-owned roles. Record baseline and assisted minutes, persona corrections, retrieval relevance judgments, draft edits, and unsupported-claim detections. Publish sanitized results with sample size and limitations. No ATS or rejection reduction claim without valid evidence.
 
-SQLite remains authoritative for evidence claims, roles, and application state. The vector index is a derived cache that can be deleted and rebuilt from eligible SQLite rows; it must not become the only copy of a profile fact. Index records should retain source row IDs and metadata needed to filter by persona. Changes to source claims should trigger an update or mark the index stale. Version the embedding model and chunking strategy so index rebuilds are reproducible.
+## Learning routine
 
-Keep route handlers thin. Put data access in a repository layer, retrieval in a dedicated service, and model-specific calls behind a provider interface. The RAG service should return typed data rather than HTML. The UI should display supporting evidence, unknowns, and a review action. Avoid adding a public endpoint or cloud service until local behavior, privacy decisions, and evaluation quality are understood.
+For each change, predict behavior before running it; explain the concept in plain language; inspect code and output; record what changed, why, failure modes, privacy/cost implications, and an interview-ready design trade-off. Use synthetic or sanitized test material. Do not paste credentials or confidential documents into external AI services.
 
-### Suggested incremental project structure
+## Standing guardrails
 
-Add modules only when their phase begins; this is the target shape, not a requirement to create empty files now:
+- Candidate evidence remains self-reported unless independently verified by the candidate; labels alone are not verification.
+- Similarity is not truth, competence, job fit, ATS success, or interview probability.
+- Preserve source evidence and provenance; never invent metrics, credentials, responsibilities, or tool experience.
+- Use permitted sources for job information; begin with user-supplied URLs and descriptions.
+- Keep external submissions and outreach under the candidate's direct control.
+- Do not commit the local SQLite database, resumes, sensitive descriptions, embedding cache, model files, or secrets.
 
-```text
-JobG's/
-├── AI_UPSKILLING_ROADMAP.md
-├── docs/
-│   ├── adr/                    # Architecture decisions and learning notes
-│   └── evaluations/            # Sanitized retrieval and output evaluations
-└── jobgs-engine/
-    ├── app.py                  # FastAPI routes and human-review workflow
-    ├── database.py             # SQLite schema and migrations
-    ├── evidence.py             # Evidence validation and persistence
-    ├── matcher.py              # Explainable lexical baseline
-    ├── retrieval/              # Local search interface and implementations
-    ├── rag/                    # Grounded analysis orchestration and schemas
-    ├── templates/              # User interface
-    └── tests/                  # Unit and integration checks
-```
-
-Do not place a real vector database or candidate dossier in the repository. Ignore local index directories, databases, resumes, model caches, and secrets in Git. Keep any test fixtures synthetic or sanitized.
-
-## Learning log template
-
-For each weekly deliverable, record:
-
-1. **What changed:** the user-visible and technical result.
-2. **Concept learned:** explain it in plain language.
-3. **Design choice:** alternatives considered and why this one was selected.
-4. **Evidence:** commands, evaluation examples, or screenshots that show behavior.
-5. **Limitations:** known failure cases and privacy/cost implications.
-6. **Interview explanation:** a concise account of the problem, design, and trade-off.
-
-## Guardrails for the roadmap
-
-- A similarity score is retrieval relevance, not job fit, qualification, or hiring probability.
-- Model-generated statements must be traceable to candidate-provided evidence or labeled unknown.
-- Do not claim a technology, metric, certification, or outcome based only on semantic similarity.
-- Keep job-site ingestion within the source's permitted access and terms; begin with manual input or user-provided URLs.
-- Keep application submission, messages, and other external actions under explicit user control.
-- Measure usefulness and failure cases before adding agents, more providers, or cloud infrastructure.
+See [PRODUCT_OVERVIEW.md](PRODUCT_OVERVIEW.md), [MVP_BUILD_PLAN.md](MVP_BUILD_PLAN.md), and the [Week 1–4 milestone notes](docs/).

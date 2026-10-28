@@ -1,6 +1,6 @@
 # Changelog
 
-All notable JobG's changes are recorded here. Existing tags are preserved as published; planned releases use Semantic Versioning.
+All notable JobG's changes are recorded here. Published tags are preserved; release notes identify the commit each release represents.
 
 ## [Unreleased] — proposed v1.5
 
@@ -31,11 +31,11 @@ All notable JobG's changes are recorded here. Existing tags are preserved as pub
 
 ### Scope and limitations
 
-- The retrieval prototype is a CLI module and is not integrated into the FastAPI dashboard.
+- At the v1.3.0 milestone, retrieval was a CLI module and was not integrated into the FastAPI dashboard. Week 2 later added managed retrieval to job intake.
 - It does not generate a RAG narrative, assess job fit, rewrite resumes, scrape job boards, or submit applications.
 - Ollama model files must be downloaded once. Runtime embedding requests use the local loopback service; no hosted inference API is configured.
 - Retrieval scores indicate evidence-search relevance only, not claim truth, candidate proficiency, hiring likelihood, or job fit.
-- `v1.2` remains an existing tag for the evidence dossier and persona-aware transferable bridge foundation. Do not move or overwrite that tag.
+- The v1.2 tag remains the evidence dossier and persona-aware transferable bridge milestone. Existing tags are preserved.
 
 ### Verification
 

@@ -1,8 +1,89 @@
 import sqlite3
 from datetime import date
 import json
+from pathlib import Path
 
-DB_FILE = "jobgs_engine.db"
+DB_FILE = str(Path(__file__).resolve().parent / "jobgs_engine.db")
+
+
+def _create_job_tables(cursor):
+    """Create additive Week 2 company-inventory and job-triage tables."""
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS companies_inventory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            company_name TEXT NOT NULL COLLATE NOCASE UNIQUE,
+            domain TEXT NOT NULL DEFAULT '',
+            hq TEXT NOT NULL DEFAULT '',
+            vertical TEXT NOT NULL DEFAULT '',
+            company_size TEXT NOT NULL DEFAULT '',
+            tech_stack_json TEXT NOT NULL DEFAULT '{}',
+            careers_url TEXT NOT NULL DEFAULT '',
+            core_services_json TEXT NOT NULL DEFAULT '[]',
+            source_provenance TEXT NOT NULL DEFAULT '',
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Upgrade existing local databases in place; do not discard inventory rows.
+    company_columns = {
+        row[1] for row in cursor.execute("PRAGMA table_info(companies_inventory)").fetchall()
+    }
+    if "core_services_json" not in company_columns:
+        cursor.execute(
+            "ALTER TABLE companies_inventory "
+            "ADD COLUMN core_services_json TEXT NOT NULL DEFAULT '[]'"
+        )
+    if "source_provenance" not in company_columns:
+        cursor.execute(
+            "ALTER TABLE companies_inventory "
+            "ADD COLUMN source_provenance TEXT NOT NULL DEFAULT ''"
+        )
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS application_tracker (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            company_id INTEGER NOT NULL REFERENCES companies_inventory(id),
+            company_name TEXT NOT NULL,
+            role_title TEXT NOT NULL,
+            job_url TEXT NOT NULL UNIQUE,
+            location TEXT NOT NULL DEFAULT '',
+            work_model TEXT NOT NULL DEFAULT 'Unknown'
+                CHECK (work_model IN ('Remote', 'Hybrid', 'On-site', 'Unknown')),
+            raw_description TEXT NOT NULL,
+            assigned_persona TEXT NOT NULL DEFAULT 'Unclear'
+                CHECK (assigned_persona IN ('Director', 'Architect', 'TPM', 'Unclear')),
+            domain_tags_json TEXT NOT NULL DEFAULT '[]',
+            triage_json TEXT NOT NULL DEFAULT '{}',
+            rag_results_json TEXT NOT NULL DEFAULT '{}',
+            transferable_bridges_json TEXT NOT NULL DEFAULT '[]',
+            outreach_draft TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'DISCOVERED'
+                CHECK (status IN ('DISCOVERED', 'REVIEWED', 'APPLIED', 'INTERVIEW', 'OFFER', 'REJECTED', 'WITHDRAWN')),
+            human_reviewed_at TEXT,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_application_tracker_status_created "
+        "ON application_tracker(status, created_at DESC)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_application_tracker_persona "
+        "ON application_tracker(assigned_persona)"
+    )
+
+
+def init_job_tables():
+    """Idempotently ensure Week 2 tables exist for an already initialized DB."""
+    conn = sqlite3.connect(DB_FILE, timeout=10)
+    try:
+        conn.execute("PRAGMA foreign_keys = ON")
+        with conn:
+            _create_job_tables(conn.cursor())
+    finally:
+        conn.close()
 
 def init_db():
     """Initialize SQLite database tables for Master Profile & Daily Target Tracking."""
@@ -41,6 +122,10 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+    # Week 2 role intake is separate from daily_applications: discovering or
+    # triaging a vacancy does not count as applying to it.
+    _create_job_tables(cursor)
 
     # 3. Candidate-provided claims linked to concise evidence notes.
     cursor.execute('''
